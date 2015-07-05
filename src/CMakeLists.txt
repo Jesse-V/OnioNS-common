@@ -41,15 +41,19 @@ add_library(onions-common SHARED
   tcp/SocksReply.cpp
 
   utils.cpp
+)
 
+add_library(onions-jsoncpp SHARED
   ${JSONCPP_CPP}
+)
 
+add_library(onions-cyoencode SHARED
   libs/CyoEncode/CyoDecode.c
   libs/CyoEncode/CyoEncode.c
 )
 
 #link against built and existing dependencies
-add_dependencies(onions-common libscrypt)
+add_dependencies(onions-common libscrypt jsoncpp)
 SET (LIBSCRYPT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/libscrypt.so.0)
 target_link_libraries(onions-common pthread ${LIBSCRYPT_LIB} botan-1.10 ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
 
@@ -58,8 +62,10 @@ set_target_properties(onions-common PROPERTIES DEBUG_POSTFIX "_d")
 
 #install library
 set(DEB_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/debian/extra_includes")
-install(TARGETS onions-common     DESTINATION /usr/lib/)
-install(FILES ${LIBSCRYPT_LIB}    DESTINATION /usr/lib/)
+install(TARGETS onions-common                     DESTINATION /usr/lib/)
+install(FILES ../build/libonions-jsoncpp.so       DESTINATION /usr/lib/)
+install(FILES ../build/libonions-cyoencode.so     DESTINATION /usr/lib/)
+install(FILES ${LIBSCRYPT_LIB}                    DESTINATION /usr/lib/)
 
 #install headers
 set(HEADERS "/usr/include/onions-common/")
