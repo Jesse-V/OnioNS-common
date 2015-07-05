@@ -63,8 +63,8 @@ set_target_properties(onions-common PROPERTIES DEBUG_POSTFIX "_d")
 #install library
 set(DEB_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/debian/extra_includes")
 install(TARGETS onions-common                     DESTINATION /usr/lib/)
-install(FILES ../build/libonions-jsoncpp.so       DESTINATION /usr/lib/)
-install(FILES ../build/libonions-cyoencode.so     DESTINATION /usr/lib/)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libonions-jsoncpp.so   DESTINATION /usr/lib/)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libonions-cyoencode.so DESTINATION /usr/lib/)
 install(FILES ${LIBSCRYPT_LIB}                    DESTINATION /usr/lib/)
 
 #install headers

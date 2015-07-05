@@ -1,3 +1,9 @@
+tor-onions-common (0.3.3.3~trusty) trusty; urgency=medium
+
+  * Fixed installation of headers and shared objects.
+
+ -- Jesse Victors <kernelcorn@riseup.net>  Sun, 5 July 2015 15:32:00 -0400
+
 tor-onions-common (0.3.2.1~trusty) trusty; urgency=medium
 
   * Initial build of common library.
