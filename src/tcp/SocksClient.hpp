@@ -3,7 +3,7 @@
 #define SOCKS_CLIENT_HPP
 
 #include <string>
-#include <json/json.h>
+#include "onions-common/include/json.h"
 #include <boost/asio.hpp>
 #include <memory>
 

@@ -13,7 +13,7 @@ endif()
 
 #JSONCPP needs special compile flags
 #https://stackoverflow.com/questions/13638408/cmake-override-compile-flags-for-single-files
-SET (JSONCPP_CPP libs/jsoncpp/jsoncpp.cpp)
+SET(JSONCPP_CPP libs/jsoncpp/jsoncpp.cpp)
 set_source_files_properties(${JSONCPP_CPP} PROPERTIES COMPILE_FLAGS -w)
 
 #include headers to satisfy dependencies
@@ -56,16 +56,36 @@ target_link_libraries(onions-common pthread ${LIBSCRYPT_LIB} botan-1.10 ${Boost_
 #custom handling of output debug binary
 set_target_properties(onions-common PROPERTIES DEBUG_POSTFIX "_d")
 
-#installation of files
+#install library
 set(DEB_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/debian/extra_includes")
-install(TARGETS onions-common            DESTINATION /usr/lib/)
-install(FILES ${LIBSCRYPT_LIB}           DESTINATION /usr/lib/)
-install(FILES ${DEB_FOLDER}/onions.1.gz  DESTINATION /usr/share/man/man1)
+install(TARGETS onions-common     DESTINATION /usr/lib/)
+install(FILES ${LIBSCRYPT_LIB}    DESTINATION /usr/lib/)
 
+#install headers
+set(HEADERS "/usr/include/onions-common/")
+install(FILES utils.hpp               DESTINATION ${HEADERS})
+install(FILES Flags.hpp               DESTINATION ${HEADERS})
+install(FILES Constants.hpp           DESTINATION ${HEADERS})
+install(FILES Common.hpp              DESTINATION ${HEADERS})
+install(FILES tcp/HandleAlloc.hpp     DESTINATION ${HEADERS}/tcp)
+install(FILES tcp/MemAllocator.hpp    DESTINATION ${HEADERS}/tcp)
+install(FILES tcp/SocksClient.hpp     DESTINATION ${HEADERS}/tcp)
+install(FILES tcp/SocksReply.hpp      DESTINATION ${HEADERS}/tcp)
+install(FILES tcp/SocksRequest.hpp    DESTINATION ${HEADERS}/tcp)
+install(FILES containers/Cache.hpp          DESTINATION ${HEADERS}/containers)
+install(FILES containers/MerkleTree.hpp     DESTINATION ${HEADERS}/containers)
+install(FILES containers/records/Record.hpp   DESTINATION ${HEADERS}/containers/records)
+install(FILES containers/records/CreateR.hpp  DESTINATION ${HEADERS}/containers/records)
+
+#install library dependency headers
+install(FILES libs/jsoncpp/json/json.h    DESTINATION ${HEADERS}/include/json)
+
+#install resources
 set(ASSETS "${DEB_FOLDER}/assets")
-install(FILES ${ASSETS}/example.key         DESTINATION /var/lib/tor-onions/)
-install(FILES ${ASSETS}/cache.txt           DESTINATION /var/lib/tor-onions/)
-install(FILES ${ASSETS}/mirrors.txt         DESTINATION /var/lib/tor-onions/)
-install(FILES ${ASSETS}/quorum.txt          DESTINATION /var/lib/tor-onions/)
+install(FILES ${ASSETS}/example.key       DESTINATION /var/lib/tor-onions/)
+install(FILES ${ASSETS}/cache.txt         DESTINATION /var/lib/tor-onions/)
+install(FILES ${ASSETS}/mirrors.txt       DESTINATION /var/lib/tor-onions/)
+install(FILES ${ASSETS}/quorum.txt        DESTINATION /var/lib/tor-onions/)
+install(FILES ${DEB_FOLDER}/onions.1.gz   DESTINATION /usr/share/man/man1)
 
 #http://www.itk.org/Wiki/CMake_FAQ#Can_I_do_.22make_uninstall.22_with_CMake.3F
