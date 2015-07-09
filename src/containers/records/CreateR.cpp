@@ -9,7 +9,7 @@
 CreateR::CreateR(Botan::RSA_PrivateKey* key,
                  const std::string& primaryName,
                  const std::string& contact)
-    : Record(key, Common::get().computeConsensusHash())
+    : Record(key, Common::computeConsensusHash())
 {
   type_ = "Create";
   setName(primaryName);

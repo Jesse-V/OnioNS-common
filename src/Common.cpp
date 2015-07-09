@@ -7,14 +7,14 @@
 #include <iostream>
 
 
-RecordPtr Common::parseRecord(const std::string& json) const
+RecordPtr Common::parseRecord(const std::string& json)
 {
   return parseRecord(toJSON(json));
 }
 
 
 
-RecordPtr Common::parseRecord(const Json::Value& rVal) const
+RecordPtr Common::parseRecord(const Json::Value& rVal)
 {
   RecordPtr r = assembleRecord(rVal);
   checkValidity(r);
@@ -23,7 +23,7 @@ RecordPtr Common::parseRecord(const Json::Value& rVal) const
 
 
 
-Json::Value Common::toJSON(const std::string& json) const
+Json::Value Common::toJSON(const std::string& json)
 {
   Json::Value rVal;
   Json::Reader reader;
@@ -37,7 +37,7 @@ Json::Value Common::toJSON(const std::string& json) const
 
 
 std::string Common::getDestination(const RecordPtr& record,
-                                   const std::string& source) const
+                                   const std::string& source)
 {
   if (record->getName() == source)
     return record->getOnion();
@@ -52,7 +52,7 @@ std::string Common::getDestination(const RecordPtr& record,
 
 
 
-uint8_t* Common::computeConsensusHash() const
+uint8_t* Common::computeConsensusHash()
 {
   std::cout << "Reading network consensus... ";
 
@@ -84,7 +84,7 @@ uint8_t* Common::computeConsensusHash() const
 
 
 
-RecordPtr Common::assembleRecord(const Json::Value& rVal) const
+RecordPtr Common::assembleRecord(const Json::Value& rVal)
 {
   auto cHash = rVal["cHash"].asString();
   auto contact = rVal["contact"].asString();
@@ -115,7 +115,7 @@ RecordPtr Common::assembleRecord(const Json::Value& rVal) const
 
 
 
-void Common::checkValidity(const RecordPtr& r) const
+void Common::checkValidity(const RecordPtr& r)
 {
   std::cout << "Checking validity... ";
   std::cout.flush();
