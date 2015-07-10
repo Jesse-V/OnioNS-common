@@ -23,8 +23,7 @@ class Utils
   static bool strEndsWith(const std::string& str, const std::string& ending);
 
   static Botan::RSA_PublicKey* base64ToRSA(const std::string&);
-  static Botan::RSA_PrivateKey* loadKey(const std::string&,
-                                        Botan::RandomNumberGenerator&);
+  static Botan::RSA_PrivateKey* loadKey(const std::string&);
   static Botan::RSA_PrivateKey* loadOpenSSLRSA(const std::string&,
                                                Botan::RandomNumberGenerator&);
 
