@@ -51,12 +51,13 @@ std::string Common::getDestination(const RecordPtr& record,
 }
 
 
-
+/*
 uint8_t* Common::computeConsensusHash()
 {
   Log::get().notice("Reading network consensus... ");
 
-  // https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+  //
+https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
   std::fstream certsFile("/var/lib/tor-onions/cached-certs");
   std::fstream netStatFile("/var/lib/tor-onions/cached-microdesc-consensus");
 
@@ -77,7 +78,7 @@ uint8_t* Common::computeConsensusHash()
   memcpy(cHash, sha.process(consensusStr), Const::SHA384_LEN);
 
   return cHash;
-}
+}*/
 
 
 
@@ -87,7 +88,6 @@ uint8_t* Common::computeConsensusHash()
 
 RecordPtr Common::assembleRecord(const Json::Value& rVal)
 {
-  auto cHash = rVal["cHash"].asString();
   auto contact = rVal["contact"].asString();
   auto nonce = rVal["nonce"].asString();
   auto pow = rVal["pow"].asString();
@@ -110,8 +110,8 @@ RecordPtr Common::assembleRecord(const Json::Value& rVal)
   }
 
   auto key = Utils::base64ToRSA(pubHSKey);
-  return std::make_shared<CreateR>(cHash, contact, name, subdomains, nonce, pow,
-                                   sig, key, timestamp);
+  return std::make_shared<CreateR>(contact, name, subdomains, nonce, pow, sig,
+                                   key, timestamp);
 }
 
 

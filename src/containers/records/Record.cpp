@@ -22,7 +22,6 @@ Record::Record(Botan::RSA_PublicKey* pubKey)
       valid_(false),
       validSig_(false)
 {
-  memset(consensusHash_, 0, NONCE_LEN);
   memset(nonce_, 0, NONCE_LEN);
   memset(scrypted_, 0, SCRYPTED_LEN);
   memset(signature_, 0, Const::SIGNATURE_LEN);
@@ -30,11 +29,11 @@ Record::Record(Botan::RSA_PublicKey* pubKey)
 
 
 
-Record::Record(Botan::RSA_PrivateKey* key, uint8_t* consensusHash) : Record(key)
+Record::Record(Botan::RSA_PrivateKey* key)
+    : Record(static_cast<Botan::RSA_PublicKey*>(key))
 {
   assert(key->get_n().bits() == Const::RSA_LEN);
   setKey(key);
-  memcpy(consensusHash_, consensusHash, Const::SHA384_LEN);
 }
 
 
@@ -50,7 +49,6 @@ Record::Record(const Record& other)
       valid_(other.valid_),
       validSig_(other.validSig_)
 {
-  memcpy(consensusHash_, other.consensusHash_, Const::SHA384_LEN);
   memcpy(nonce_, other.nonce_, NONCE_LEN);
   memcpy(scrypted_, other.scrypted_, SCRYPTED_LEN);
   memcpy(signature_, other.signature_, Const::SIGNATURE_LEN);
@@ -198,8 +196,6 @@ uint8_t* Record::getHash() const
 bool Record::refresh()
 {
   timestamp_ = time(NULL);
-  // consensusHash_ = Common::get().computeConsensusHash();
-
   valid_ = false;  // need new nonce now
   return true;
 }
@@ -233,7 +229,6 @@ void Record::makeValid(uint8_t nWorkers)
             Log::get().notice("Success from " + name);
 
             // save successful answer
-            memcpy(consensusHash_, record->consensusHash_, Const::SHA384_LEN);
             memcpy(nonce_, record->nonce_, NONCE_LEN);
             memcpy(scrypted_, record->scrypted_, SCRYPTED_LEN);
             memcpy(signature_, record->signature_, Const::SIGNATURE_LEN);
@@ -290,7 +285,6 @@ std::string Record::asJSON() const
   obj["type"] = type_;
   obj["contact"] = contact_;
   obj["timestamp"] = std::to_string(timestamp_);
-  obj["cHash"] = Botan::base64_encode(consensusHash_, Const::SHA384_LEN);
   obj["name"] = name_;
 
   // add subdomains
@@ -331,10 +325,7 @@ std::ostream& operator<<(std::ostream& os, const Record& dt)
   os << "   Time: " << dt.timestamp_ << std::endl;
   os << "   Validation:" << std::endl;
 
-  os << "      Last Consensus: "
-     << Botan::base64_encode(dt.consensusHash_, Const::SHA384_LEN) << std::endl;
-
-  os << "      Nonce: ";
+  os << "   Nonce: ";
   if (dt.isValid())
     os << Botan::base64_encode(dt.nonce_, dt.NONCE_LEN) << std::endl;
   else
@@ -443,16 +434,12 @@ UInt8Array Record::computeCentral()
 
   int index = 0;
   auto pubKey = getPublicKey();
-  const size_t centralLen =
-      str.length() + Const::SHA384_LEN + NONCE_LEN + pubKey.second;
+  const size_t centralLen = str.length() + NONCE_LEN + pubKey.second;
   uint8_t* central =
       new uint8_t[centralLen + SCRYPTED_LEN + Const::SIGNATURE_LEN];
 
   memcpy(central + index, str.c_str(), str.size());  // copy string into array
   index += str.size();
-
-  memcpy(central + index, consensusHash_, Const::SHA384_LEN);
-  index += Const::SHA384_LEN;
 
   memcpy(central + index, nonce_, NONCE_LEN);
   index += NONCE_LEN;

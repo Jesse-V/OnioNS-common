@@ -29,7 +29,7 @@ class Record
   };
 
   Record(Botan::RSA_PublicKey*);
-  Record(Botan::RSA_PrivateKey*, uint8_t*);
+  Record(Botan::RSA_PrivateKey*);
   Record(const Record&);
 
   void setName(const std::string&);
@@ -71,7 +71,6 @@ class Record
   Botan::RSA_PrivateKey* privateKey_;
   Botan::RSA_PublicKey* publicKey_;
 
-  uint8_t consensusHash_[Const::SHA384_LEN];
   uint8_t nonce_[NONCE_LEN];
   uint8_t scrypted_[SCRYPTED_LEN];
   uint8_t signature_[Const::SIGNATURE_LEN];

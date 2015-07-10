@@ -13,7 +13,6 @@ class Common
   static RecordPtr parseRecord(const Json::Value&);
   static Json::Value toJSON(const std::string&);
   static std::string getDestination(const RecordPtr&, const std::string&);
-  static uint8_t* computeConsensusHash();
 
  private:
   static RecordPtr assembleRecord(const Json::Value&);

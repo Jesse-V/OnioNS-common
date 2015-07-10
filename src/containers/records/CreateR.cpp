@@ -8,7 +8,7 @@
 CreateR::CreateR(Botan::RSA_PrivateKey* key,
                  const std::string& primaryName,
                  const std::string& contact)
-    : Record(key, Common::computeConsensusHash())
+    : Record(key)
 {
   type_ = "Create";
   setName(primaryName);
@@ -17,8 +17,7 @@ CreateR::CreateR(Botan::RSA_PrivateKey* key,
 
 
 
-CreateR::CreateR(const std::string& cHash,
-                 const std::string& contact,
+CreateR::CreateR(const std::string& contact,
                  const std::string& name,
                  const NameList& subdomains,
                  const std::string& nonce,
@@ -34,8 +33,6 @@ CreateR::CreateR(const std::string& cHash,
   setSubdomains(subdomains);
   timestamp_ = stol(time);
 
-  assert(Botan::base64_decode(consensusHash_, cHash, false) ==
-         Const::SHA384_LEN);
   assert(Botan::base64_decode(nonce_, nonce, false) == NONCE_LEN);
   assert(Botan::base64_decode(scrypted_, pow, false) == SCRYPTED_LEN);
   assert(Botan::base64_decode(signature_, sig, false) == Const::SIGNATURE_LEN);
