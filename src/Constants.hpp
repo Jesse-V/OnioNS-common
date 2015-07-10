@@ -14,7 +14,6 @@ class Const
   static const uint32_t SHA1_LEN = 160 / 8;
 
   static const ushort IPC_PORT = 9053;
-  static const ushort SERVER_PORT = 10053;
 };
 
 #endif

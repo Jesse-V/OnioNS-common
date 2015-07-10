@@ -8,13 +8,13 @@
 class Cache
 {
  public:
-  bool add(const RecordPtr& record);
-  bool add(const std::vector<RecordPtr>&);
-  std::vector<RecordPtr> getSortedList();
-  RecordPtr get(const std::string&) const;
+  static bool add(const RecordPtr& record);
+  static bool add(const std::vector<RecordPtr>&);
+  static std::vector<RecordPtr> getSortedList();
+  static RecordPtr get(const std::string&);
 
  private:
-  std::vector<RecordPtr> records_;
+  static std::vector<RecordPtr> records_;
 };
 
 #endif
