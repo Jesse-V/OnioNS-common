@@ -1,6 +1,6 @@
 
 #include "Record.hpp"
-#include "../utils.hpp"
+#include "../Utils.hpp"
 #include "../../Log.hpp"
 
 #include <libscrypt/libscrypt.h>
