@@ -3,12 +3,14 @@
 #define UTILS_HPP
 
 #include <botan/rsa.h>
+#include <popt.h>
 #include <cstdint>
 #include <string>
 
 class Utils
 {
  public:
+  static bool parse(int argc, const poptContext& pc);
   static uint32_t arrayToUInt32(const uint8_t*, int32_t);
   static char* getAsHex(const uint8_t*, int);
   static bool isPowerOfTwo(std::size_t);

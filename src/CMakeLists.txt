@@ -27,7 +27,6 @@ add_custom_target(libscrypt
 )
 
 add_library(onions-common SHARED
-  main.cpp
   Common.cpp
   Flags.cpp
   Config.cpp

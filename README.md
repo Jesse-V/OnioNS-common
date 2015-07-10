@@ -36,7 +36,7 @@ I provide amd64 .deb builds in the [Releases section](https://github.com/Jesse-V
 * **Install from source**
 
 > 1. Download the latest .zip or .tar.gz archive from the Releases page and unzip it.
-> 2. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake botan1.10-dev libasio-dev libboost-system-dev** Fedora: **yum install g++ cmake botan-devel asio-devel boost-system**
+> 2. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev** Fedora: **yum install g++ cmake popt-devel botan-devel asio-devel boost-system**
 > 3. **./build.sh**
 > 4. **cd build/**
 > 5. **sudo make install**
