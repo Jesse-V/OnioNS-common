@@ -8,6 +8,16 @@ Log::Log()
 {
   fout.open("Browser/TorBrowser/OnioNS/events.log",
             std::fstream::out | std::fstream::app);
+
+  if (fout.is_open())
+  {
+    notice("Successfully opened log file.");
+    std::cout << "Opened log file, further output will be there." << std::endl;
+  }
+  else
+  {
+    std::cout << "Error opening file";
+  }
 }
 
 
@@ -35,7 +45,10 @@ void Log::error(const std::string& str)
 
 void Log::log(const std::string& type, const std::string& str)
 {
-  fout << "[" << type << "] " << str << std::endl;
+  if (fout.is_open())
+    fout << "[" << type << "] " << str << std::endl;
+  else
+    std::cout << "[" << type << "] " << str << std::endl;
 }
 
 
