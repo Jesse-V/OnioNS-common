@@ -9,7 +9,7 @@
 #include <sstream>
 
 
-bool parse(int argc, const poptContext& pc)
+bool Utils::parse(int argc, const poptContext& pc)
 {  // http://privatemisc.blogspot.com/2012/12/popt-basic-example.html
   poptSetOtherOptionHelp(pc, "[ARG...]");
   if (argc < 2)

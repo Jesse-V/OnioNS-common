@@ -2,6 +2,8 @@
 #include "Cache.hpp"
 #include <algorithm>
 
+std::vector<RecordPtr> Cache::records_;
+
 
 bool Cache::add(const RecordPtr& record)
 {  // todo: delete Records should cause deletion/replacement, etc
