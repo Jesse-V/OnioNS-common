@@ -2,9 +2,9 @@
 #include "Common.hpp"
 #include "containers/records/CreateR.hpp"
 #include "utils.hpp"
+#include "Log.hpp"
 #include <botan/sha2_64.h>
 #include <fstream>
-#include <iostream>
 
 
 RecordPtr Common::parseRecord(const std::string& json)
@@ -54,7 +54,7 @@ std::string Common::getDestination(const RecordPtr& record,
 
 uint8_t* Common::computeConsensusHash()
 {
-  std::cout << "Reading network consensus... ";
+  Log::get().notice("Reading network consensus... ");
 
   // https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
   std::fstream certsFile("/var/lib/tor-onions/cached-certs");
@@ -69,7 +69,8 @@ uint8_t* Common::computeConsensusHash()
                          std::istreambuf_iterator<char>());
   std::string consensusStr = certsStr + netStatStr;
 
-  std::cout << "done. (" << consensusStr.length() << " bytes)" << std::endl;
+  Log::get().notice("done. (" + std::to_string(consensusStr.length()) +
+                    " bytes)");
 
   uint8_t* cHash = new uint8_t[Const::SHA384_LEN];
   Botan::SHA_384 sha;
@@ -117,21 +118,21 @@ RecordPtr Common::assembleRecord(const Json::Value& rVal)
 
 void Common::checkValidity(const RecordPtr& r)
 {
-  std::cout << "Checking validity... ";
-  std::cout.flush();
+  Log::get().notice("Checking validity... ");
+
   bool tmp = false;
   r->computeValidity(&tmp);
-  std::cout << "done." << std::endl;
+  Log::get().notice("done.");
 
   if (r->hasValidSignature())
-    std::cout << "Record signature is valid." << std::endl;
+    Log::get().notice("Record signature is valid.");
   else
     throw std::runtime_error("Bad signature on Record!");
 
   if (r->isValid())  // todo: this does not actually check the PoW output
-    std::cout << "Record proof-of-work is valid." << std::endl;
+    Log::get().notice("Record proof-of-work is valid.");
   else
     throw std::runtime_error("Record is not valid!");
 
-  std::cout << "Record check complete." << std::endl;
+  Log::get().notice("Record check complete.");
 }

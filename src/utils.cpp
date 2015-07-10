@@ -5,7 +5,6 @@
 #include <cstdio>
 #include <stdexcept>
 #include <sstream>
-#include <iostream>
 
 
 // https://stackoverflow.com/questions/6855115/byte-array-to-int-c

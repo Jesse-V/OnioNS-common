@@ -3,7 +3,6 @@
 #include "SocksRequest.hpp"
 #include "SocksReply.hpp"
 #include "../Constants.hpp"
-#include <iostream>
 
 using boost::asio::ip::tcp;
 

@@ -3,7 +3,7 @@
 #include <botan/sha2_64.h>
 #include <botan/base64.h>
 #include <json/json.h>
-#include <iostream>
+#include "../Log.hpp"
 
 // the compiler dislikes NodePtr in return statements, this fixes it
 #define NodePtr std::shared_ptr<MerkleTree::Node>
@@ -12,12 +12,12 @@
 // records must be in alphabetical order according to record.getName()
 MerkleTree::MerkleTree(const std::vector<RecordPtr>& records)
 {
-  std::cout << "Building Merkle tree..." << std::endl;
+  Log::get().notice("Building Merkle tree...");
   fill(records);
   build();
-  std::cout << "Merkle tree root is "
-            << Botan::base64_encode(root_->value_.first, root_->value_.second)
-            << std::endl;
+  Log::get().notice(
+      "Merkle tree root is " +
+      Botan::base64_encode(root_->value_.first, root_->value_.second));
 }
 
 
@@ -125,7 +125,7 @@ std::vector<NodePtr> MerkleTree::buildParents(std::vector<NodePtr>& nodes)
       right->parent_ = parent;
   }
 
-  std::cout << "Merkle level width: " << parents.size() << std::endl;
+  Log::get().notice("Merkle level width: " + parents.size());
 
   return parents;
 }

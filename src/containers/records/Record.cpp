@@ -1,6 +1,7 @@
 
 #include "Record.hpp"
 #include "../utils.hpp"
+#include "../../Log.hpp"
 
 #include <libscrypt/libscrypt.h>
 #include <botan/pubkey.h>
@@ -12,7 +13,6 @@
 
 #include <thread>
 #include <cassert>
-#include <iostream>
 
 
 Record::Record(Botan::RSA_PublicKey* pubKey)
@@ -211,7 +211,7 @@ void Record::makeValid(uint8_t nWorkers)
   if (nWorkers == 0)
     throw std::invalid_argument("Not enough workers");
 
-  std::cout << "Making the Record valid... \n\n";
+  Log::get().notice("Making the Record valid... \n");
 
   bool found = false;
   bool* foundSig = &found;
@@ -224,14 +224,13 @@ void Record::makeValid(uint8_t nWorkers)
         {
           std::string name("worker " + std::to_string(n + 1));
 
-          std::cout << "Starting " << name << std::endl;
-          std::cout.flush();
+          Log::get().notice("Starting " + name);
 
           auto record = std::make_shared<Record>(*this);
           record->nonce_[NONCE_LEN - 1] = n;
           if (record->makeValid(0, nWorkers, foundSig) == WorkStatus::Success)
           {
-            std::cout << "Success from " << name << std::endl;
+            Log::get().notice("Success from " + name);
 
             // save successful answer
             memcpy(consensusHash_, record->consensusHash_, Const::SHA384_LEN);
@@ -241,7 +240,7 @@ void Record::makeValid(uint8_t nWorkers)
             valid_ = true;
           }
 
-          std::cout << "Shutting down " << name << std::endl;
+          Log::get().notice("Shutting down " + name);
         }));
   }
 
@@ -418,7 +417,7 @@ void Record::computeValidity(bool* abortSig)
   // updated scrypted_, append scrypted_ to buffer, check for errors
   if (updateAppendScrypt(buffer) < 0)
   {
-    std::cout << "Error with scrypt call!" << std::endl;
+    Log::get().warn("Error with scrypt call!");
     return;
   }
 
@@ -537,7 +536,7 @@ void Record::updateValidity(const UInt8Array& buffer)
     valid_ = true;
   else
   {
-    std::cout << Botan::base64_encode(nonce_, NONCE_LEN) << " -> not valid\n";
-    std::cout.flush();
+    Log::get().notice(Botan::base64_encode(nonce_, NONCE_LEN) +
+                      " -> not valid");
   }
 }

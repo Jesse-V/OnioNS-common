@@ -3,7 +3,6 @@
 #include "../../Common.hpp"
 #include <botan/base64.h>
 #include <cassert>
-#include <iostream>
 
 
 CreateR::CreateR(Botan::RSA_PrivateKey* key,

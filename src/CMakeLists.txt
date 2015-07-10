@@ -28,9 +28,10 @@ add_custom_target(libscrypt
 
 add_library(onions-common SHARED
   main.cpp
+  Common.cpp
   Flags.cpp
   Config.cpp
-  Common.cpp
+  Log.cpp
 
   containers/Cache.cpp
   containers/MerkleTree.cpp
@@ -70,11 +71,12 @@ install(FILES ${LIBSCRYPT_LIB}                    DESTINATION /usr/lib/)
 
 #install headers
 set(HEADERS "/usr/include/onions-common/")
-install(FILES utils.hpp               DESTINATION ${HEADERS})
-install(FILES Flags.hpp               DESTINATION ${HEADERS})
-install(FILES Constants.hpp           DESTINATION ${HEADERS})
-install(FILES Config.hpp              DESTINATION ${HEADERS})
 install(FILES Common.hpp              DESTINATION ${HEADERS})
+install(FILES Flags.hpp               DESTINATION ${HEADERS})
+install(FILES Config.hpp              DESTINATION ${HEADERS})
+install(FILES Constants.hpp           DESTINATION ${HEADERS})
+install(FILES Log.hpp                 DESTINATION ${HEADERS})
+install(FILES utils.hpp               DESTINATION ${HEADERS})
 install(FILES tcp/HandleAlloc.hpp     DESTINATION ${HEADERS}/tcp)
 install(FILES tcp/MemAllocator.hpp    DESTINATION ${HEADERS}/tcp)
 install(FILES tcp/SocksClient.hpp     DESTINATION ${HEADERS}/tcp)
