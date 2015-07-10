@@ -13,21 +13,7 @@ class Flags
     return instance;
   }
 
-  enum OperationMode
-  {
-    CLIENT,
-    MIRROR,
-    HIDDEN_SERVICE
-  };
-
-  enum Command
-  {
-    CREATE_RECORD
-  };
-
   bool parse(int argc, char** argv);
-  OperationMode getMode() const;
-  Command getCommand() const;
   std::string getKeyPath() const;
 
  private:
@@ -35,8 +21,6 @@ class Flags
   Flags(Flags const&) = delete;
   void operator=(Flags const&) = delete;
 
-  OperationMode mode_;
-  Command command_;
   std::string keyPath_;
 };
 
