@@ -69,7 +69,6 @@ install(FILES ${LIBSCRYPT_LIB}                    DESTINATION /usr/lib/)
 #install headers
 set(HEADERS "/usr/include/onions-common/")
 install(FILES Common.hpp              DESTINATION ${HEADERS})
-install(FILES Flags.hpp               DESTINATION ${HEADERS})
 install(FILES Config.hpp              DESTINATION ${HEADERS})
 install(FILES Constants.hpp           DESTINATION ${HEADERS})
 install(FILES Log.hpp                 DESTINATION ${HEADERS})
