@@ -12,11 +12,6 @@
 bool Utils::parse(int argc, const poptContext& pc)
 {  // http://privatemisc.blogspot.com/2012/12/popt-basic-example.html
   poptSetOtherOptionHelp(pc, "[ARG...]");
-  if (argc < 2)
-  {
-    poptPrintUsage(pc, stderr, 0);
-    return false;
-  }
 
   // process options and handle each val returned
   int val;
@@ -27,6 +22,8 @@ bool Utils::parse(int argc, const poptContext& pc)
   // poptGetNextOpt returns -1 when the final argument has been parsed
   if (val != -1)
   {
+    poptPrintUsage(pc, stderr, 0);
+
     // handle error
     switch (val)
     {
