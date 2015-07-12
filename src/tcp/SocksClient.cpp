@@ -21,13 +21,14 @@ SocksClient::SocksClient(const std::string& socksIP, short socksPort)
 
 
 std::shared_ptr<SocksClient> SocksClient::getCircuitTo(const std::string& host,
-                                                       short port)
+                                                       short port,
+                                                       short localSOCKS)
 {
   try
   {
     // connect over Tor to remote resolver
     std::cout << "Detecting the Tor Browser..." << std::endl;
-    auto socks = std::make_shared<SocksClient>("localhost", 9150);
+    auto socks = std::make_shared<SocksClient>("localhost", localSOCKS);
     socks->connectTo(host, port);
     std::cout << "The Tor Browser appears to be running." << std::endl;
 

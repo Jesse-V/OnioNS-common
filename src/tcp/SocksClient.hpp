@@ -11,7 +11,9 @@ class SocksClient
 {
  public:
   SocksClient(const std::string&, short);
-  static std::shared_ptr<SocksClient> getCircuitTo(const std::string&, short);
+  static std::shared_ptr<SocksClient> getCircuitTo(const std::string&,
+                                                   short,
+                                                   short);
   Json::Value sendReceive(const std::string&, const std::string&);
 
  private:
