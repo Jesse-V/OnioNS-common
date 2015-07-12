@@ -17,6 +17,7 @@ class Log
   void notice(const std::string&);
   void warn(const std::string&);
   void error(const std::string&);
+  static void setLogPath(const std::string&);
 
  private:
   Log();
@@ -24,9 +25,8 @@ class Log
   void operator=(Log const&) = delete;
 
   void log(const std::string&, const std::string&);
-  std::fstream fout;
+  std::fstream fout_;
+  static std::string logPath_;
 };
-
-// Log::Notice& operator<<(Log::Notice&, int);
 
 #endif

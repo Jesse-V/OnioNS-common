@@ -3,6 +3,7 @@
 #include "SocksRequest.hpp"
 #include "SocksReply.hpp"
 #include "../Constants.hpp"
+#include "../Log.hpp"
 
 using boost::asio::ip::tcp;
 
@@ -12,7 +13,7 @@ SocksClient::SocksClient(const std::string& socksIP, short socksPort)
       socket_(*ios_),
       resolver_(*ios_)
 {
-  std::cout << "Creating SOCKS connection..." << std::endl;
+  Log::get().notice("Connecting to Tor's SOCKS...");
   tcp::resolver::query socks_query(socksIP, std::to_string(socksPort));
   tcp::resolver::iterator endpoint_iterator = resolver_.resolve(socks_query);
   boost::asio::connect(socket_, endpoint_iterator);
@@ -27,29 +28,29 @@ std::shared_ptr<SocksClient> SocksClient::getCircuitTo(const std::string& host,
   try
   {
     // connect over Tor to remote resolver
-    std::cout << "Detecting the Tor Browser..." << std::endl;
+    Log::get().notice("Testing for Tor...");
     auto socks = std::make_shared<SocksClient>("localhost", localSOCKS);
     socks->connectTo(host, port);
-    std::cout << "The Tor Browser appears to be running." << std::endl;
+    Log::get().notice("Tor appears to be running.");
 
-    std::cout << "Testing connection to the server..." << std::endl;
+    Log::get().notice("Testing connection to the server...");
     auto r = socks->sendReceive("ping", "");
     if (r == "pong")
     {
-      std::cout << "Server confirmed up." << std::endl;
+      Log::get().notice("Server confirmed up.");
       return socks;
     }
     else
     {
-      std::cout << r << std::endl;
-      std::cerr << "Server did not return a valid response!" << std::endl;
+      Log::get().warn(r.asString());
+      Log::get().warn("Server did not return a valid response!");
       return nullptr;
     }
   }
   catch (boost::system::system_error const& ex)
   {
-    std::cerr << ex.what() << std::endl;
-    std::cerr << "Test failed. Cannot continue." << std::endl;
+    Log::get().warn(ex.what());
+    Log::get().warn("Test failed. Cannot continue.");
     return nullptr;
   }
 }
@@ -59,8 +60,7 @@ std::shared_ptr<SocksClient> SocksClient::getCircuitTo(const std::string& host,
 Json::Value SocksClient::sendReceive(const std::string& type,
                                      const std::string& msg)
 {
-  std::cout << "Sending... ";
-  std::cout.flush();
+  Log::get().notice("Sending... ");
 
   // send as JSON
   Json::Value outVal;
@@ -70,7 +70,7 @@ Json::Value SocksClient::sendReceive(const std::string& type,
   boost::asio::write(socket_, boost::asio::buffer(writer.write(outVal)));
 
   // read from socket until newline
-  std::cout << "receiving... ";
+  Log::get().notice("receiving... ");
   std::cout.flush();
   boost::asio::streambuf response;
   boost::asio::read_until(socket_, response, "\n");
@@ -89,8 +89,7 @@ Json::Value SocksClient::sendReceive(const std::string& type,
   if (!responseVal.isMember("error") && !responseVal.isMember("response"))
     responseVal["error"] = "Invalid response from server.";
 
-  std::cout << "done." << std::endl;
-  std::cout.flush();
+  Log::get().notice("done.");
 
   return responseVal;
 }
@@ -103,19 +102,19 @@ Json::Value SocksClient::sendReceive(const std::string& type,
 
 void SocksClient::connectTo(const std::string& host, short port)
 {
-  std::cout << "Resolving address of remote host..." << std::endl;
+  Log::get().notice("Connecting to remote host...");
   tcp::resolver::query query(tcp::v4(), host, std::to_string(port));
   endpoint_ = *resolver_.resolve(query);
 
   if (!checkConnection())
-    throw std::runtime_error("Remote host refused connection.");
+    Log::get().error("Remote host refused connection.");
 }
 
 
 
 bool SocksClient::checkConnection()
 {
-  // std::cout << "Connecting via Tor..." << std::endl;
+  Log::get().notice("Connecting over Tor...");
 
   SocksRequest sreq(SocksRequest::connect, endpoint_, "OnioNS");
   boost::asio::write(socket_, sreq.buffers());
@@ -125,7 +124,7 @@ bool SocksClient::checkConnection()
 
   if (!srep.success())
   {
-    std::cerr << "Connection failed." << srep.status() << std::endl;
+    Log::get().notice("Connection failed.");
     return false;
   }
 

@@ -3,13 +3,17 @@
 #include <stdexcept>
 #include <iostream>
 
+std::string Log::logPath_;
+
 
 Log::Log()
 {
-  fout.open("Browser/TorBrowser/OnioNS/events.log",
-            std::fstream::out | std::fstream::app);
+  if (logPath_.empty())
+    return;  // don't open file
 
-  if (fout.is_open())
+  fout_.open(logPath_, std::fstream::out | std::fstream::app);
+
+  if (fout_.is_open())
   {
     notice("Successfully opened log file.");
     std::cout << "Opened log file, further output will be there." << std::endl;
@@ -21,6 +25,7 @@ Log::Log()
 }
 
 
+
 void Log::notice(const std::string& str)
 {
   log("notice", str);
@@ -30,14 +35,14 @@ void Log::notice(const std::string& str)
 
 void Log::warn(const std::string& str)
 {
-  log("warn", str);
+  log("warn  ", str);
 }
 
 
 
 void Log::error(const std::string& str)
 {
-  log("error", str);
+  log("error ", str);
   throw std::runtime_error(str);
 }
 
@@ -45,23 +50,15 @@ void Log::error(const std::string& str)
 
 void Log::log(const std::string& type, const std::string& str)
 {
-  if (fout.is_open())
-    fout << "[" << type << "] " << str << std::endl;
+  if (fout_.is_open() || !logPath_.empty())
+    fout_ << "[" << type << "] " << str << std::endl;
   else
     std::cout << "[" << type << "] " << str << std::endl;
 }
 
 
 
-/*
-Log::Notice& Log::Notice::operator<<(int i)
+void Log::setLogPath(const std::string& logPath)
 {
-  std::cout << i << std::endl;
-  return *this;
+  logPath_ = logPath;
 }
-
-
-Env::Notice& Env::Notice::operator>>(std::string& str)
-{
-  return *this;
-}*/
