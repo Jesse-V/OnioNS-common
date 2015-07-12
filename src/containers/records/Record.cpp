@@ -16,11 +16,7 @@
 
 
 Record::Record(Botan::RSA_PublicKey* pubKey)
-    : privateKey_(nullptr),
-      publicKey_(pubKey),
-      timestamp_(time(NULL)),
-      valid_(false),
-      validSig_(false)
+    : privateKey_(nullptr), publicKey_(pubKey), valid_(false), validSig_(false)
 {
   memset(nonce_, 0, NONCE_LEN);
   memset(scrypted_, 0, SCRYPTED_LEN);
@@ -45,7 +41,6 @@ Record::Record(const Record& other)
       subdomains_(other.subdomains_),
       privateKey_(other.privateKey_),
       publicKey_(other.publicKey_),
-      timestamp_(other.timestamp_),
       valid_(other.valid_),
       validSig_(other.validSig_)
 {
@@ -193,15 +188,6 @@ uint8_t* Record::getHash() const
 
 
 
-bool Record::refresh()
-{
-  timestamp_ = time(NULL);
-  valid_ = false;  // need new nonce now
-  return true;
-}
-
-
-
 void Record::makeValid(uint8_t nWorkers)
 {
   if (nWorkers == 0)
@@ -284,7 +270,6 @@ std::string Record::asJSON() const
 
   obj["type"] = type_;
   obj["contact"] = contact_;
-  obj["timestamp"] = std::to_string(timestamp_);
   obj["name"] = name_;
 
   // add subdomains
@@ -322,7 +307,6 @@ std::ostream& operator<<(std::ostream& os, const Record& dt)
        << std::endl;
 
   os << "   Contact: PGP 0x" << dt.contact_ << std::endl;
-  os << "   Time: " << dt.timestamp_ << std::endl;
   os << "   Validation:" << std::endl;
 
   os << "   Nonce: ";
@@ -430,7 +414,6 @@ UInt8Array Record::computeCentral()
   for (auto pair : subdomains_)
     str += pair.first + pair.second;
   str += contact_;
-  str += std::to_string(timestamp_);
 
   int index = 0;
   auto pubKey = getPublicKey();

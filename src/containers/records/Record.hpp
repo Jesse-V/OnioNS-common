@@ -46,7 +46,6 @@ class Record
   std::string getOnion() const;
   uint8_t* getHash() const;
 
-  bool refresh();
   void makeValid(uint8_t);
   void computeValidity(bool*);  // updates valid_, with flag to abort work
   bool isValid() const;
@@ -74,7 +73,6 @@ class Record
   uint8_t nonce_[NONCE_LEN];
   uint8_t scrypted_[SCRYPTED_LEN];
   uint8_t signature_[Const::SIGNATURE_LEN];
-  long timestamp_;
   bool valid_, validSig_;
 };
 

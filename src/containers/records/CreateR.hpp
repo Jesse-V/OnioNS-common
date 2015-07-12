@@ -17,8 +17,7 @@ class CreateR : public Record
           const std::string&,
           const std::string&,
           const std::string&,
-          Botan::RSA_PublicKey* pubKey,
-          const std::string&);
+          Botan::RSA_PublicKey* pubKey);
 };
 
 #endif

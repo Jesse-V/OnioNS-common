@@ -23,15 +23,13 @@ CreateR::CreateR(const std::string& contact,
                  const std::string& nonce,
                  const std::string& pow,
                  const std::string& sig,
-                 Botan::RSA_PublicKey* pubKey,
-                 const std::string& time)
+                 Botan::RSA_PublicKey* pubKey)
     : Record(pubKey)
 {
   type_ = "Create";
   setContact(contact);
   setName(name);
   setSubdomains(subdomains);
-  timestamp_ = stol(time);
 
   assert(Botan::base64_decode(nonce_, nonce, false) == NONCE_LEN);
   assert(Botan::base64_decode(scrypted_, pow, false) == SCRYPTED_LEN);

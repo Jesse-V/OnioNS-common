@@ -93,7 +93,6 @@ RecordPtr Common::assembleRecord(const Json::Value& rVal)
   auto pow = rVal["pow"].asString();
   auto pubHSKey = rVal["pubHSKey"].asString();
   auto sig = rVal["recordSig"].asString();
-  auto timestamp = rVal["timestamp"].asString();
   auto type = rVal["type"].asString();
   auto name = rVal["name"].asString();
 
@@ -111,7 +110,7 @@ RecordPtr Common::assembleRecord(const Json::Value& rVal)
 
   auto key = Utils::base64ToRSA(pubHSKey);
   return std::make_shared<CreateR>(contact, name, subdomains, nonce, pow, sig,
-                                   key, timestamp);
+                                   key);
 }
 
 
