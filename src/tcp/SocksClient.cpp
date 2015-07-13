@@ -35,14 +35,14 @@ std::shared_ptr<SocksClient> SocksClient::getCircuitTo(const std::string& host,
 
     Log::get().notice("Testing connection to the server...");
     auto r = socks->sendReceive("ping", "");
-    if (r == "pong")
+    if (!r.isMember("error") && r["response"] == "pong")
     {
       Log::get().notice("Server confirmed up.");
       return socks;
     }
     else
     {
-      Log::get().warn(r.asString());
+      std::cout << r << std::endl;
       Log::get().warn("Server did not return a valid response!");
       return nullptr;
     }
@@ -60,7 +60,7 @@ std::shared_ptr<SocksClient> SocksClient::getCircuitTo(const std::string& host,
 Json::Value SocksClient::sendReceive(const std::string& type,
                                      const std::string& msg)
 {
-  Log::get().notice("Sending... ");
+  Log::get().notice("Sending \"" + type + "\" to remote host... ");
 
   // send as JSON
   Json::Value outVal;
@@ -70,7 +70,7 @@ Json::Value SocksClient::sendReceive(const std::string& type,
   boost::asio::write(socket_, boost::asio::buffer(writer.write(outVal)));
 
   // read from socket until newline
-  Log::get().notice("receiving... ");
+  Log::get().notice("Receiving response from remote host... ");
   boost::asio::streambuf response;
   boost::asio::read_until(socket_, response, "\n");
 
@@ -88,7 +88,7 @@ Json::Value SocksClient::sendReceive(const std::string& type,
   if (!responseVal.isMember("error") && !responseVal.isMember("response"))
     responseVal["error"] = "Invalid response from server.";
 
-  Log::get().notice("done.");
+  Log::get().notice("I/O complete.");
 
   return responseVal;
 }
@@ -101,7 +101,7 @@ Json::Value SocksClient::sendReceive(const std::string& type,
 
 void SocksClient::connectTo(const std::string& host, short port)
 {
-  Log::get().notice("Connecting to remote host...");
+  Log::get().notice("Resolving remote host...");
   tcp::resolver::query query(tcp::v4(), host, std::to_string(port));
   endpoint_ = *resolver_.resolve(query);
 
@@ -113,7 +113,7 @@ void SocksClient::connectTo(const std::string& host, short port)
 
 bool SocksClient::checkConnection()
 {
-  Log::get().notice("Connecting over Tor...");
+  Log::get().notice("Send/receive with remote host...");
 
   SocksRequest sreq(SocksRequest::connect, endpoint_, "OnioNS");
   boost::asio::write(socket_, sreq.buffers());
