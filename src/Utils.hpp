@@ -21,6 +21,7 @@ class Utils
                             const std::string&,
                             const std::string&);
   static bool strEndsWith(const std::string& str, const std::string& ending);
+  static std::string trimString(const std::string&);
 
   static Botan::RSA_PublicKey* base64ToRSA(const std::string&);
   static Botan::RSA_PrivateKey* loadKey(const std::string&);

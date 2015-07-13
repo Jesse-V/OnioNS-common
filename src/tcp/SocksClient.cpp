@@ -71,7 +71,6 @@ Json::Value SocksClient::sendReceive(const std::string& type,
 
   // read from socket until newline
   Log::get().notice("receiving... ");
-  std::cout.flush();
   boost::asio::streambuf response;
   boost::asio::read_until(socket_, response, "\n");
 

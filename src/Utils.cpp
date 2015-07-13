@@ -111,6 +111,20 @@ bool Utils::strEndsWith(const std::string& str, const std::string& ending)
 
 
 
+std::string Utils::trimString(const std::string& str)
+{  // https://stackoverflow.com/questions/216823
+  std::string s(str);
+  s.erase(s.begin(),
+          std::find_if(s.begin(), s.end(),
+                       std::not1(std::ptr_fun<int, int>(std::isspace))));
+  s.erase(std::find_if(s.rbegin(), s.rend(),
+                       std::not1(std::ptr_fun<int, int>(std::isspace))).base(),
+          s.end());
+  return s;
+}
+
+
+
 Botan::RSA_PublicKey* Utils::base64ToRSA(const std::string& base64)
 {
   // decode public key
