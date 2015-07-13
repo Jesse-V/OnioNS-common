@@ -44,7 +44,7 @@ std::string Common::getDestination(const RecordPtr& record,
 
   NameList list = record->getSubdomains();
   for (auto subdomain : list)
-    if (subdomain.first == source)
+    if (subdomain.first + "." + record->getName() == source)
       return subdomain.second;
 
   throw std::runtime_error("Record does not contain \"" + source + "\"!");
@@ -121,7 +121,6 @@ void Common::checkValidity(const RecordPtr& r)
 
   bool tmp = false;
   r->computeValidity(&tmp);
-  Log::get().notice("done.");
 
   if (r->hasValidSignature())
     Log::get().notice("Record signature is valid.");

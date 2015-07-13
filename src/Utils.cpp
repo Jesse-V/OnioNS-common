@@ -111,6 +111,13 @@ bool Utils::strEndsWith(const std::string& str, const std::string& ending)
 
 
 
+bool Utils::strBeginsWith(const std::string& str, const std::string& begin)
+{  // https://stackoverflow.com/questions/931827/
+  return str.compare(0, begin.length(), begin) == 0;
+}
+
+
+
 std::string Utils::trimString(const std::string& str)
 {  // https://stackoverflow.com/questions/216823
   std::string s(str);

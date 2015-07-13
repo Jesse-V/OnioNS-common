@@ -51,9 +51,15 @@ void Log::error(const std::string& str)
 void Log::log(const std::string& type, const std::string& str)
 {
   if (fout_.is_open() || !logPath_.empty())
+  {
     fout_ << "[" << type << "] " << str << std::endl;
+    fout_.flush();
+  }
   else
+  {
     std::cout << "[" << type << "] " << str << std::endl;
+    std::cout.flush();
+  }
 }
 
 

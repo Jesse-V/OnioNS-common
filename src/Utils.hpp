@@ -20,7 +20,8 @@ class Utils
   static void stringReplace(std::string&,
                             const std::string&,
                             const std::string&);
-  static bool strEndsWith(const std::string& str, const std::string& ending);
+  static bool strEndsWith(const std::string&, const std::string&);
+  static bool strBeginsWith(const std::string&, const std::string&);
   static std::string trimString(const std::string&);
 
   static Botan::RSA_PublicKey* base64ToRSA(const std::string&);
