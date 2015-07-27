@@ -60,7 +60,6 @@ target_link_libraries(onions-common pthread ${LIBSCRYPT_LIB} botan-1.10 ${Boost_
 set_target_properties(onions-common PROPERTIES DEBUG_POSTFIX "_d")
 
 #install library
-set(DEB_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/debian/extra_includes")
 install(TARGETS onions-common                     DESTINATION /usr/lib/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libonions-jsoncpp.so   DESTINATION /usr/lib/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libonions-cyoencode.so DESTINATION /usr/lib/)
@@ -87,8 +86,7 @@ install(FILES containers/records/CreateR.hpp  DESTINATION ${HEADERS}/containers/
 install(FILES libs/jsoncpp/json/json.h    DESTINATION ${HEADERS}/include/json)
 
 #install resources
-set(ASSETS "${DEB_FOLDER}/assets")
-install(FILES ${ASSETS}/example.key       DESTINATION /var/lib/tor-onions/)
+set(ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
 install(FILES ${ASSETS}/cache.json        DESTINATION /var/lib/tor-onions/)
 install(FILES ${ASSETS}/mirrors.json      DESTINATION /var/lib/tor-onions/)
 install(FILES ${ASSETS}/authority.json    DESTINATION /var/lib/tor-onions/)

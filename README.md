@@ -5,15 +5,15 @@ The Onion Name System (OnioNS) is a privacy-enhanced, distributed, and highly us
 
 ### Repository Details
 
-This repository provides the common core code and acts as a dependency for the other OnioNS packages. Please see the -HS, -server, and -client repositories for more information.
+This repository provides the common core code and acts as a shared library and dependency for the other OnioNS packages, -HS, -server, and -client.
 
 ### Supported Systems
 
 #### Linux
 
-**Ubuntu 14.04+, Debian 8+, Linux Mint 17+, Fedora 21+**
+**Debian 7 and 8, Ubuntu 14.04 - 15.10, Mint 17 - 17.2, Fedora 21 - 23**
 
-i386, amd64, and armhf architectures are supported, so it should run on most 32-bit, 64-bit, and ARM machines. If you have an ARM board (Pi, BBB, Odroid, etc) feel free to test it.
+i386, amd64, and armhf architectures are supported, so it should run on 32-bit, 64-bit, and ARM machines. I'm also supporting ARM boards such as the Pi, BBB, Odroid, etc.
 
 #### Windows
 
@@ -27,18 +27,18 @@ Not currently supported, support planned in the far future. I am willing to prov
 
 * **Install from PPA**
 
-The tor-onions-common package is a dependency for the other packages, so it will automatically install.
+The tor-onions-common package is a dependency for the other packages, so it will automatically install, no need to install it manually.
 
 * **Install from .deb file**
 
-I provide amd64 .deb builds in the [Releases section](https://github.com/Jesse-V/OnioNS/releases), which should work for you. For other architectures, you may download from [my PPA](https://launchpad.net/~jvictors/+archive/tor-dev/+packages).
+I provide builds for Debian Wheezy in the [Releases section](https://github.com/Jesse-V/OnioNS-client/releases) for several architectures. For other architectures, you may download from [my PPA](https://launchpad.net/~jvictors/+archive/tor-dev/+packages).
 
 * **Install from source**
 
-> 1. Download the latest .zip or .tar.gz archive from the Releases page and unzip it.
-> 2. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev** Fedora: **yum install g++ cmake popt-devel botan-devel asio-devel boost-system**
-> 3. **./build.sh**
-> 4. **cd build/**
-> 5. **sudo make install**
+> 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev** Fedora: **yum install g++ cmake popt-devel botan-devel asio-devel boost-system**
+> 2. Download and extract the latest release from the [Releases page](https://github.com/Jesse-V/OnioNS-common/releases).
+> 3. **mkdir build; cd build; cmake ../src; make -j $(grep -c ^processor /proc/cpuinfo); sudo make install**
 
-The ClangBuild.sh script is available if you prefer the Clang compiler. This script is recommended if you are developing or hacking OnioNS. You will need to install *clang-format-3.6* before running that as ClangBuild.sh will also re-style your code to the official development style, which is based on Chromium.
+The rebuild.sh script is available if you are actively developing OnioNS. You will need to install *clang-format-3.6* and *cppcheck* as the script also styles the code and performs a static analysis check.
+
+You can cleanup your build with **(rm -rf build; cd src/libs/libscrypt; make clean)**
