@@ -31,13 +31,13 @@ The tor-onions-common package is a dependency for the other packages, so it will
 
 * **Install from .deb file**
 
-I provide builds for Debian Wheezy in the [Releases section](https://github.com/Jesse-V/OnioNS-client/releases) for several architectures. For other architectures, you may download from [my PPA](https://launchpad.net/~jvictors/+archive/tor-dev/+packages).
+I provide builds for Debian Wheezy in the [Releases section](https://github.com/Jesse-V/OnioNS-common/releases) for several architectures. For other architectures, you may download from [my PPA](https://launchpad.net/~jvictors/+archive/tor-dev/+packages).
 
 * **Install from source**
 
 > 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev** Fedora: **yum install g++ cmake popt-devel botan-devel asio-devel boost-system**
 > 2. Download and extract the latest release from the [Releases page](https://github.com/Jesse-V/OnioNS-common/releases).
-> 3. **mkdir build; cd build; cmake ../src; make -j $(grep -c ^processor /proc/cpuinfo); sudo make install**
+> 3. **(mkdir build; cd build; cmake ../src; make -j $(grep -c ^processor /proc/cpuinfo); sudo make install)**
 
 The rebuild.sh script is available if you are actively developing OnioNS. You will need to install *clang-format-3.6* and *cppcheck* as the script also styles the code and performs a static analysis check.
 
