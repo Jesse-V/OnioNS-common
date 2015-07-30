@@ -64,7 +64,7 @@ Json::Value SocksClient::sendReceive(const std::string& type,
 
   // send as JSON
   Json::Value outVal;
-  outVal["command"] = type;
+  outVal["type"] = type;
   outVal["value"] = msg;
   Json::FastWriter writer;
   boost::asio::write(socket_, boost::asio::buffer(writer.write(outVal)));
