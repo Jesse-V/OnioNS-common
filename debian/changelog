@@ -1,8 +1,23 @@
+tor-onions-common (0.4.0.0~trusty) trusty; urgency=medium
+
+  * Updated networking protocol.
+  * Capability to log to a file.
+  * Removed consensus hash and timestamp from Record.
+  * Introduced flag for specify a custom Tor SOCKS port.
+  * Replaced SourceForge tclap library with standard Linux popt.
+  * Removed manpage as the more specific packages now provide them.
+  * Standardized the build process.
+  * Improved git commit styles to match common standard.
+  * Clarified README.
+  * Many bug fixes.
+
+ -- Jesse Victors <kernelcorn@riseup.net>  Tues, 04 Aug 2015 09:00:00 -0800
+
 tor-onions-common (0.3.3.3~trusty) trusty; urgency=medium
 
   * Fixed installation of headers and shared objects.
 
- -- Jesse Victors <kernelcorn@riseup.net>  Sun, 5 July 2015 15:32:00 -0400
+ -- Jesse Victors <kernelcorn@riseup.net>  Sun, 05 July 2015 15:32:00 -0400
 
 tor-onions-common (0.3.2.1~trusty) trusty; urgency=medium
 
@@ -10,4 +25,4 @@ tor-onions-common (0.3.2.1~trusty) trusty; urgency=medium
   * Removed debugging symbols.
   * Fixed build dependencies.
 
- -- Jesse Victors <kernelcorn@riseup.net> Thur, 1 July 2015 22:45:00 -0400
+ -- Jesse Victors <kernelcorn@riseup.net>  Thur, 01 July 2015 22:45:00 -0400
