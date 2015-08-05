@@ -36,14 +36,14 @@ class MerkleTree
  private:
   void fill(const std::vector<RecordPtr>&);
   void build();
-  std::vector<NodePtr> buildParents(std::vector<NodePtr>&);
-  uint8_t* join(const NodePtr&, const NodePtr&);
-  UInt8Array concatenate(const NodePtr&, const NodePtr&);
+  static std::vector<NodePtr> buildParents(std::vector<NodePtr>&);
+  static uint8_t* join(const NodePtr&, const NodePtr&);
+  static UInt8Array concatenate(const NodePtr&, const NodePtr&);
   std::pair<NodePtr, NodePtr> getBounds(const std::string&) const;
-  std::vector<NodePtr> getPath(const NodePtr&) const;
-  uint findCommonPath(const std::vector<NodePtr>&,
-                      const std::vector<NodePtr>&,
-                      Json::Value&) const;
+  static std::vector<NodePtr> getPath(const NodePtr&);
+  static uint findCommonPath(const std::vector<NodePtr>&,
+                             const std::vector<NodePtr>&,
+                             Json::Value&);
 
   // tree is built bottom-up but can be accessed either way
   std::vector<std::pair<std::string, NodePtr>> leaves_;

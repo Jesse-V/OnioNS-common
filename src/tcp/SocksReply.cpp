@@ -2,7 +2,8 @@
 #include "SocksReply.hpp"
 
 
-SocksReply::SocksReply() : null_byte_(0), status_()
+SocksReply::SocksReply()
+    : null_byte_(0), status_(), port_high_byte_(0), port_low_byte_(0)
 {
 }
 

@@ -164,7 +164,7 @@ std::string Record::getOnion() const
   // perform SHA-1
   Botan::SHA_160 sha1;
   auto hash = sha1.process(std::string(derEncoded, x509Key.size()));
-  delete derEncoded;
+  delete[] derEncoded;
 
   // perform base32 encoding
   char onionB32[Const::SHA1_LEN * 4];
@@ -181,8 +181,7 @@ std::string Record::getOnion() const
 uint8_t* Record::getHash() const
 {
   Botan::SHA_384 sha;
-  uint8_t* hash = new uint8_t[Const::SHA384_LEN];
-  hash = sha.process(asJSON());
+  uint8_t* hash = sha.process(asJSON());
   return hash;
 }
 
@@ -475,7 +474,7 @@ int Record::updateAppendScrypt(UInt8Array& buffer)
   {
     assert(SCRYPT_SALT_LEN == 16);
     std::string piHex("243F6A8885A308D313198A2E03707344");  // pi in hex
-    Utils::hex2bin(piHex.c_str(), SALT);
+    Utils::hex2bin(reinterpret_cast<const uint8_t*>(piHex.c_str()), SALT);
     saltReady = true;
   }
 

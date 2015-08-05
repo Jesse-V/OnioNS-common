@@ -33,12 +33,12 @@ Json::Value MerkleTree::getPathTo(const std::string& name) const
   uint split = findCommonPath(lPath, rPath, jsonObj);  // sets jsonObj["common"]
 
   Json::Value leftBranch;
-  for (int n = split; n < lPath.size(); n++)
+  for (uint n = split; n < lPath.size(); n++)
     leftBranch[split - n] = lPath[n]->asJSON();
   jsonObj["left"] = leftBranch;
 
   Json::Value rightBranch;
-  for (int n = split; n < rPath.size(); n++)
+  for (uint n = split; n < rPath.size(); n++)
     rightBranch[split - n] = rPath[n]->asJSON();
   jsonObj["right"] = leftBranch;
 
@@ -125,7 +125,7 @@ std::vector<NodePtr> MerkleTree::buildParents(std::vector<NodePtr>& nodes)
       right->parent_ = parent;
   }
 
-  Log::get().notice("Merkle level width: " + parents.size());
+  Log::get().notice("Merkle level width: " + std::to_string(parents.size()));
 
   return parents;
 }
@@ -188,7 +188,7 @@ std::pair<NodePtr, NodePtr> MerkleTree::getBounds(const std::string& name) const
 
 
 
-std::vector<NodePtr> MerkleTree::getPath(const NodePtr& leaf) const
+std::vector<NodePtr> MerkleTree::getPath(const NodePtr& leaf)
 {
   std::vector<NodePtr> path;
   NodePtr node = leaf;
@@ -206,7 +206,7 @@ std::vector<NodePtr> MerkleTree::getPath(const NodePtr& leaf) const
 
 uint MerkleTree::findCommonPath(const std::vector<NodePtr>& lPath,
                                 const std::vector<NodePtr>& rPath,
-                                Json::Value& pathObj) const
+                                Json::Value& pathObj)
 {
   uint index = 0;
 

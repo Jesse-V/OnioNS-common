@@ -10,7 +10,7 @@
 class Utils
 {
  public:
-  static bool parse(int argc, const poptContext& pc);
+  static bool parse(const poptContext& pc);
   static uint32_t arrayToUInt32(const uint8_t*, int32_t);
   static char* getAsHex(const uint8_t*, int);
   static bool isPowerOfTwo(std::size_t);
@@ -29,8 +29,8 @@ class Utils
   static Botan::RSA_PrivateKey* loadOpenSSLRSA(const std::string&,
                                                Botan::RandomNumberGenerator&);
 
-  static void hex2bin(const char*, uint8_t*);
-  static uint8_t char2int(const char);
+  static void hex2bin(const uint8_t*, uint8_t*);
+  static uint8_t char2int(const uint8_t);
 };
 
 #endif

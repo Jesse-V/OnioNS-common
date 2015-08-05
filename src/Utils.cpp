@@ -9,7 +9,7 @@
 #include <sstream>
 
 
-bool Utils::parse(int argc, const poptContext& pc)
+bool Utils::parse(const poptContext& pc)
 {  // http://privatemisc.blogspot.com/2012/12/popt-basic-example.html
   poptSetOtherOptionHelp(pc, "[ARG...]");
 
@@ -164,13 +164,16 @@ Botan::RSA_PrivateKey* Utils::loadKey(const std::string& filename)
     Log::get().notice("Read PKCS8-formatted RSA key.");
     return rsaKey;
   }
-  catch (Botan::Decoding_Error&)
+  catch (const Botan::Decoding_Error&)
   {
     Log::get().notice("Read OpenSSL-formatted RSA key.");
     return Utils::loadOpenSSLRSA(filename, rng);
   }
+  catch (const Botan::Stream_IO_Error& err)
+  {
+    Log::get().error(err.what());
+  }
 
-  Log::get().warn("Unable to read key!");
   return NULL;
 }
 
@@ -210,8 +213,8 @@ Botan::RSA_PrivateKey* Utils::loadOpenSSLRSA(const std::string& filename,
 
 // This function assumes src to be a zero terminated sanitized string with
 // an even number of [0-9a-f] characters, and target to be sufficiently large
-void Utils::hex2bin(const char* src, uint8_t* target)
-{  // https://stackoverflow.com/questions/17261798/converting-a-hex-string-to-byte-array-in-c
+void Utils::hex2bin(const uint8_t* src, uint8_t* target)
+{  // https://stackoverflow.com/questions/17261798/
   while (*src && src[1])
   {
     *(target++) = char2int(*src) * 16 + char2int(src[1]);
@@ -221,7 +224,7 @@ void Utils::hex2bin(const char* src, uint8_t* target)
 
 
 
-uint8_t Utils::char2int(const char c)
+uint8_t Utils::char2int(const uint8_t c)
 {
   if (c >= '0' && c <= '9')
     return c - '0';

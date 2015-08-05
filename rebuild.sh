@@ -21,9 +21,11 @@ cd build
 cmake ../src # -DCMAKE_BUILD_TYPE=Debug
 
 echo "Compiling...              ----------------------------------------------"
-make -j $(grep -c ^processor /proc/cpuinfo)
-
-echo "Static analysis...        ----------------------------------------------"
-
-cd ..
-find src -type f -follow -print | grep -v "libs" | cppcheck --enable=all --platform=unix64 --inconclusive --file-list=-
+if (make -j $(grep -c ^processor /proc/cpuinfo)) then
+  echo "Static analysis...        ----------------------------------------------"
+  cd ..
+  find src -type f -follow -print | cppcheck -i "src/assets" -i "src/libs" --enable=all --platform=unix64 --inconclusive --file-list=-
+else
+  rm -f onions-common
+  cd ..
+fi

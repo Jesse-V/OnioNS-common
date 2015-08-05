@@ -16,7 +16,7 @@ class Log
 
   void notice(const std::string&);
   void warn(const std::string&);
-  void error(const std::string&);
+  [[noreturn]] void error(const std::string&);
   static void setLogPath(const std::string&);
 
  private:

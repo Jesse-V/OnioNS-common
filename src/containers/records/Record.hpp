@@ -31,6 +31,7 @@ class Record
   Record(Botan::RSA_PublicKey*);
   Record(Botan::RSA_PrivateKey*);
   Record(const Record&);
+  virtual ~Record();
 
   void setName(const std::string&);
   std::string getName() const;
