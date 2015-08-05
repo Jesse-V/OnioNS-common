@@ -51,6 +51,14 @@ Record::Record(const Record& other)
 
 
 
+Record::~Record()
+{
+  delete privateKey_;
+  delete publicKey_;
+}
+
+
+
 void Record::setName(const std::string& name)
 {
   // todo: check for valid name characters
