@@ -52,9 +52,9 @@ add_library(onions-cyoencode SHARED
 )
 
 #link against built and existing dependencies
-add_dependencies(onions-common libscrypt jsoncpp)
+add_dependencies(onions-common libscrypt onions-jsoncpp)
 SET (LIBSCRYPT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/libscrypt.so.0)
-target_link_libraries(onions-common pthread ${LIBSCRYPT_LIB} botan-1.10 ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
+target_link_libraries(onions-common onions-cyoencode onions-jsoncpp ${LIBSCRYPT_LIB} popt pthread botan-1.10 ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
 
 #custom handling of output debug binary
 set_target_properties(onions-common PROPERTIES DEBUG_POSTFIX "_d")
