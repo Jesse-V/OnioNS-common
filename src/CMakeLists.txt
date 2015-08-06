@@ -89,6 +89,6 @@ install(FILES libs/jsoncpp/json/json.h    DESTINATION ${HEADERS}/include/json)
 set(ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
 install(FILES ${ASSETS}/cache.json        DESTINATION /var/lib/tor-onions/)
 install(FILES ${ASSETS}/mirrors.json      DESTINATION /var/lib/tor-onions/)
-install(FILES ${ASSETS}/authority.json    DESTINATION /var/lib/tor-onions/)
+install(FILES ${ASSETS}/quorum.json       DESTINATION /var/lib/tor-onions/)
 
 #http://www.itk.org/Wiki/CMake_FAQ#Can_I_do_.22make_uninstall.22_with_CMake.3F

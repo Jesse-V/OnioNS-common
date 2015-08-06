@@ -8,7 +8,7 @@
 class Config
 {
  public:
-  static Json::Value getAuthority();
+  static Json::Value getQuorumNode();
   static Json::Value getMirror();
 
  private:

@@ -3,9 +3,9 @@
 #include <fstream>
 
 
-Json::Value Config::getAuthority()
+Json::Value Config::getQuorumNode()
 {
-  return loadFile("/var/lib/tor-onions/authority.json");
+  return loadFile("/var/lib/tor-onions/quorum.json");
 }
 
 
