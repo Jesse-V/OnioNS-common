@@ -53,8 +53,8 @@ Record::Record(const Record& other)
 
 Record::~Record()
 {
-  delete privateKey_;
-  delete publicKey_;
+  // delete privateKey_;
+  // delete publicKey_;
 }
 
 
@@ -64,10 +64,10 @@ void Record::setName(const std::string& name)
   // todo: check for valid name characters
 
   if (name.length() < 5 || name.length() > 128)
-    throw std::invalid_argument("Name \"" + name + "\" has invalid length!");
+    Log::get().error("Name \"" + name + "\" has invalid length!");
 
   if (!Utils::strEndsWith(name, ".tor"))
-    throw std::invalid_argument("Name \"" + name + "\" must end with .tor!");
+    Log::get().error("Name \"" + name + "\" must end with .tor!");
 
   name_ = name;
   valid_ = false;
@@ -87,20 +87,20 @@ void Record::setSubdomains(const NameList& subdomains)
   // todo: count/check number and length of names
 
   if (subdomains.size() > 24)
-    throw std::invalid_argument("Cannot have more than 24 subdomains!");
+    Log::get().error("Cannot have more than 24 subdomains!");
 
   for (auto pair : subdomains)
   {
     if (pair.first.length() == 0 || pair.first.length() > 128)
-      throw std::invalid_argument("Invalid length of subdomain!");
+      Log::get().error("Invalid length of subdomain!");
     if (pair.second.length() == 0 || pair.second.length() > 128)
-      throw std::invalid_argument("Invalid length of destination!");
+      Log::get().error("Invalid length of destination!");
 
     if (Utils::strEndsWith(pair.first, name_))
-      throw std::invalid_argument("Subdomain should not contain name");
+      Log::get().error("Subdomain should not contain name");
     if (!Utils::strEndsWith(pair.second, ".tor") &&
         !Utils::strEndsWith(pair.second, ".onion"))
-      throw std::invalid_argument("Destination must go to .tor or .onion!");
+      Log::get().error("Destination must go to .tor or .onion!");
   }
 
   subdomains_ = subdomains;
@@ -118,8 +118,8 @@ NameList Record::getSubdomains() const
 
 void Record::setContact(const std::string& contactInfo)
 {
-  if (!Utils::isPowerOfTwo(contactInfo.length()))
-    throw std::invalid_argument("Invalid length of PGP key");
+  if (!contactInfo.empty() && !Utils::isPowerOfTwo(contactInfo.length()))
+    Log::get().error("Invalid length of PGP key");
 
   contact_ = contactInfo;
   valid_ = false;
@@ -198,7 +198,7 @@ uint8_t* Record::getHash() const
 void Record::makeValid(uint8_t nWorkers)
 {
   if (nWorkers == 0)
-    throw std::invalid_argument("Not enough workers");
+    Log::get().error("Not enough workers");
 
   Log::get().notice("Making the Record valid... \n");
 
@@ -276,8 +276,9 @@ std::string Record::asJSON() const
   Json::Value obj;
 
   obj["type"] = type_;
-  obj["contact"] = contact_;
   obj["name"] = name_;
+  if (!contact_.empty())
+    obj["contact"] = contact_;
 
   // add subdomains
   for (auto sub : subdomains_)
@@ -313,7 +314,8 @@ std::ostream& operator<<(std::ostream& os, const Record& dt)
     os << "      " << subd.first << "." << dt.name_ << " -> " << subd.second
        << std::endl;
 
-  os << "   Contact: PGP 0x" << dt.contact_ << std::endl;
+  if (dt.contact_.empty())
+    os << "   Contact: PGP 0x" << dt.contact_ << std::endl;
   os << "   Validation:" << std::endl;
 
   os << "   Nonce: ";

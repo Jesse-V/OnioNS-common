@@ -159,7 +159,7 @@ Botan::RSA_PrivateKey* Utils::loadKey(const std::string& filename)
     auto pvtKey = Botan::PKCS8::load_key(filename, rng);
     auto rsaKey = dynamic_cast<Botan::RSA_PrivateKey*>(pvtKey);
     if (!rsaKey)
-      throw std::invalid_argument("The loaded key is not a RSA key!");
+      Log::get().error("The loaded key is not a RSA key!");
 
     Log::get().notice("Read PKCS8-formatted RSA key.");
     return rsaKey;
@@ -233,5 +233,5 @@ uint8_t Utils::char2int(const uint8_t c)
   if (c >= 'a' && c <= 'f')
     return c - 'a' + 10;
 
-  throw std::runtime_error("Invalid character");
+  Log::get().error("Invalid character");
 }

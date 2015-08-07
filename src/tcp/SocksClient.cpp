@@ -34,15 +34,16 @@ std::shared_ptr<SocksClient> SocksClient::getCircuitTo(const std::string& host,
     Log::get().notice("Tor appears to be running.");
 
     Log::get().notice("Testing connection to the server...");
-    auto r = socks->sendReceive("ping", "");
-    if (!r.isMember("error") && r["response"] == "pong")
+    auto response = socks->sendReceive("SYN", "");
+    if (response["type"] == "success" && response["value"] == "ACK")
     {
       Log::get().notice("Server confirmed up.");
       return socks;
     }
     else
     {
-      std::cout << r << std::endl;
+      Json::FastWriter writer;
+      Log::get().notice(writer.write(response));
       Log::get().warn("Server did not return a valid response!");
       return nullptr;
     }
@@ -85,7 +86,7 @@ Json::Value SocksClient::sendReceive(const std::string& type,
   if (!reader.parse(responseStr, responseVal))
     responseVal["error"] = "Failed to parse response from server.";
 
-  if (!responseVal.isMember("error") && !responseVal.isMember("response"))
+  if (!responseVal.isMember("type") || !responseVal.isMember("value"))
     responseVal["error"] = "Invalid response from server.";
 
   Log::get().notice("I/O complete.");

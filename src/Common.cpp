@@ -29,7 +29,7 @@ Json::Value Common::toJSON(const std::string& json)
   Json::Reader reader;
 
   if (!reader.parse(json, rVal))
-    throw std::invalid_argument("Failed to parse Record!");
+    Log::get().error("Failed to parse Record!");
 
   return rVal;
 }
@@ -47,7 +47,7 @@ std::string Common::getDestination(const RecordPtr& record,
     if (subdomain.first + "." + record->getName() == source)
       return subdomain.second;
 
-  throw std::runtime_error("Record does not contain \"" + source + "\"!");
+  Log::get().error("Record does not contain \"" + source + "\"!");
 }
 
 
@@ -97,7 +97,7 @@ RecordPtr Common::assembleRecord(const Json::Value& rVal)
   auto name = rVal["name"].asString();
 
   if (type != "Create")
-    throw std::invalid_argument("Record parsing: not a Create Record!");
+    Log::get().error("Record parsing: not a Create Record!");
 
   NameList subdomains;
   if (rVal.isMember("subd"))
@@ -125,12 +125,12 @@ void Common::checkValidity(const RecordPtr& r)
   if (r->hasValidSignature())
     Log::get().notice("Record signature is valid.");
   else
-    throw std::runtime_error("Bad signature on Record!");
+    Log::get().error("Bad signature on Record!");
 
   if (r->isValid())  // todo: this does not actually check the PoW output
     Log::get().notice("Record proof-of-work is valid.");
   else
-    throw std::runtime_error("Record is not valid!");
+    Log::get().error("Record is not valid!");
 
   Log::get().notice("Record check complete.");
 }
