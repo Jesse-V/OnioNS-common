@@ -42,7 +42,17 @@ std::vector<RecordPtr> Cache::getSortedList()
 RecordPtr Cache::get(const std::string& name)
 {
   for (auto r : records_)
+  {
+    // check main name
     if (r->getName() == name)
       return r;
+
+    // check subdomain
+    NameList list = r->getSubdomains();
+    for (auto subdomain : list)
+      if (subdomain.first + "." + r->getName() == name)
+        return r;
+  }
+
   return nullptr;
 }

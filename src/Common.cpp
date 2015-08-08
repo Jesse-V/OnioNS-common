@@ -48,6 +48,7 @@ std::string Common::getDestination(const RecordPtr& record,
       return subdomain.second;
 
   Log::get().error("Record does not contain \"" + source + "\"!");
+  return "";
 }
 
 
