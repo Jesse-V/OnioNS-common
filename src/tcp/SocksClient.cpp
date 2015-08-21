@@ -76,9 +76,9 @@ Json::Value SocksClient::sendReceive(const std::string& type,
   boost::asio::read_until(socket_, response, "\n");
 
   // convert to string
-  std::string responseStr;
   std::istream is(&response);
-  is >> responseStr;
+  std::string responseStr((std::istreambuf_iterator<char>(is)),
+                          std::istreambuf_iterator<char>());
 
   // parse into JSON object
   Json::Reader reader;
