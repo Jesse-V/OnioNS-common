@@ -5,15 +5,16 @@
 #include <thread>
 
 
-TorStream::TorStream(const std::string& socksHost,
+TorStream::TorStream(boost::asio::io_service& ios,
+                     const std::string& socksHost,
                      ushort socksPort,
                      const std::string& remoteHost,
                      ushort remotePort)
-    : socket_(ios_),
+    : socket_(ios),
       socks_(std::make_shared<Socks5::Socks5>(socket_)),
       ready_(false)
 {
-  boost::asio::ip::tcp::resolver resolver(ios_);
+  boost::asio::ip::tcp::resolver resolver(ios);
   boost::asio::ip::tcp::endpoint endpoint =
       *resolver.resolve({socksHost, std::to_string(socksPort)});
   socket_.connect(endpoint);
@@ -40,7 +41,7 @@ TorStream::TorStream(const std::string& socksHost,
                            });
                      });
 
-  ios_.run();
+  ios.run();
 }
 
 
