@@ -52,36 +52,6 @@ std::string Common::getDestination(const RecordPtr& record,
 }
 
 
-/*
-uint8_t* Common::computeConsensusHash()
-{
-  Log::get().notice("Reading network consensus... ");
-
-  //
-https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
-  std::fstream certsFile("/var/lib/tor-onions/cached-certs");
-  std::fstream netStatFile("/var/lib/tor-onions/cached-microdesc-consensus");
-
-  if (!certsFile)
-    throw std::runtime_error("Cannot open consensus documents!");
-
-  std::string certsStr((std::istreambuf_iterator<char>(certsFile)),
-                       std::istreambuf_iterator<char>());
-  std::string netStatStr((std::istreambuf_iterator<char>(netStatFile)),
-                         std::istreambuf_iterator<char>());
-  std::string consensusStr = certsStr + netStatStr;
-
-  Log::get().notice("done. (" + std::to_string(consensusStr.length()) +
-                    " bytes)");
-
-  uint8_t* cHash = new uint8_t[Const::SHA384_LEN];
-  Botan::SHA_384 sha;
-  memcpy(cHash, sha.process(consensusStr), Const::SHA384_LEN);
-
-  return cHash;
-}*/
-
-
 
 // ************************** PRIVATE METHODS ****************************** //
 

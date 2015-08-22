@@ -37,9 +37,10 @@ add_library(onions-common SHARED
   containers/records/Record.cpp
   containers/records/CreateR.cpp
 
-  tcp/SocksClient.cpp
-  tcp/SocksRequest.cpp
-  tcp/SocksReply.cpp
+  tcp/TorStream.cpp
+  tcp/socks5/Socks5.cpp
+  tcp/socks5/Request.cpp
+  tcp/socks5/Reply.cpp
 )
 
 add_library(onions-jsoncpp SHARED
@@ -72,11 +73,15 @@ install(FILES Config.hpp              DESTINATION ${HEADERS})
 install(FILES Constants.hpp           DESTINATION ${HEADERS})
 install(FILES Log.hpp                 DESTINATION ${HEADERS})
 install(FILES Utils.hpp               DESTINATION ${HEADERS})
-install(FILES tcp/HandleAlloc.hpp     DESTINATION ${HEADERS}/tcp)
-install(FILES tcp/MemAllocator.hpp    DESTINATION ${HEADERS}/tcp)
-install(FILES tcp/SocksClient.hpp     DESTINATION ${HEADERS}/tcp)
-install(FILES tcp/SocksReply.hpp      DESTINATION ${HEADERS}/tcp)
-install(FILES tcp/SocksRequest.hpp    DESTINATION ${HEADERS}/tcp)
+install(FILES tcp/TorStream.hpp             DESTINATION ${HEADERS}/tcp)
+install(FILES tcp/socks5/AddressType.hpp    DESTINATION ${HEADERS}/tcp/socks5)
+install(FILES tcp/socks5/AuthMethod.hpp     DESTINATION ${HEADERS}/tcp/socks5)
+install(FILES tcp/socks5/Command.hpp        DESTINATION ${HEADERS}/tcp/socks5)
+install(FILES tcp/socks5/Error.hpp          DESTINATION ${HEADERS}/tcp/socks5)
+install(FILES tcp/socks5/Reply.hpp          DESTINATION ${HEADERS}/tcp/socks5)
+install(FILES tcp/socks5/ReplyCode.hpp      DESTINATION ${HEADERS}/tcp/socks5)
+install(FILES tcp/socks5/Request.hpp        DESTINATION ${HEADERS}/tcp/socks5)
+install(FILES tcp/socks5/Socks5.hpp         DESTINATION ${HEADERS}/tcp/socks5)
 install(FILES containers/Cache.hpp          DESTINATION ${HEADERS}/containers)
 install(FILES containers/MerkleTree.hpp     DESTINATION ${HEADERS}/containers)
 install(FILES containers/records/Record.hpp   DESTINATION ${HEADERS}/containers/records)

@@ -234,4 +234,5 @@ uint8_t Utils::char2int(const uint8_t c)
     return c - 'a' + 10;
 
   Log::get().error("Invalid character");
+  return 0;
 }
