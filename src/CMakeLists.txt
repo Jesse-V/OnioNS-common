@@ -41,6 +41,8 @@ add_library(onions-common SHARED
   tcp/socks5/Socks5.cpp
   tcp/socks5/Request.cpp
   tcp/socks5/Reply.cpp
+
+  crypto/ed25519.c
 )
 
 add_library(onions-jsoncpp SHARED

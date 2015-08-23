@@ -24,7 +24,7 @@ echo "Compiling...              ----------------------------------------------"
 if (make -j $(grep -c ^processor /proc/cpuinfo)) then
   echo "Static analysis...        ----------------------------------------------"
   cd ..
-  find src -type f -follow -print | cppcheck -i "src/assets" -i "src/libs" --enable=all --platform=unix64 --inconclusive --file-list=-
+  find src -type f -follow -print | cppcheck -i "src/assets" -i "src/libs" -i "src/crypto" --enable=all --platform=unix64 --inconclusive --file-list=-
 else
   rm -f onions-common
   cd ..
