@@ -6,15 +6,15 @@
 #include <json/json.h>
 #include <string>
 
+typedef std::shared_ptr<boost::asio::ip::tcp::socket> SocketPtr;
+
 class TorStream
 {
  public:
-  TorStream(boost::asio::io_service&,
-            const std::string&,
-            ushort,
-            const std::string&,
-            ushort);
+  TorStream(const std::string&, ushort, const std::string&, ushort);
   Json::Value sendReceive(const std::string&, const std::string&);
+  SocketPtr getSocket();
+  boost::asio::io_service& getIO();
 
  private:
   bool confirmProtocol();
@@ -25,7 +25,8 @@ class TorStream
                            Socks5::AuthMethod);
   void contactCallback(Socks5::Error, boost::system::error_code, Socks5::Reply);
 
-  boost::asio::ip::tcp::socket socket_;
+  boost::asio::io_service ios_;
+  SocketPtr socket_;
   std::shared_ptr<Socks5::Socks5> socks_;
   bool ready_;
 };

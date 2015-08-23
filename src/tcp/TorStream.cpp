@@ -5,19 +5,18 @@
 #include <thread>
 
 
-TorStream::TorStream(boost::asio::io_service& ios,
-                     const std::string& socksHost,
+TorStream::TorStream(const std::string& socksHost,
                      ushort socksPort,
                      const std::string& remoteHost,
                      ushort remotePort)
-    : socket_(ios),
-      socks_(std::make_shared<Socks5::Socks5>(socket_)),
+    : socket_(std::make_shared<boost::asio::ip::tcp::socket>(ios_)),
+      socks_(std::make_shared<Socks5::Socks5>(*socket_)),
       ready_(false)
 {
-  boost::asio::ip::tcp::resolver resolver(ios);
+  boost::asio::ip::tcp::resolver resolver(ios_);
   boost::asio::ip::tcp::endpoint endpoint =
       *resolver.resolve({socksHost, std::to_string(socksPort)});
-  socket_.connect(endpoint);
+  socket_->connect(endpoint);
 
   socks_->initialize({Socks5::AuthMethod::no_authentication},
                      [&](Socks5::Error err, boost::system::error_code ec,
@@ -41,7 +40,7 @@ TorStream::TorStream(boost::asio::io_service& ios,
                            });
                      });
 
-  ios.run();
+  ios_.run();
 }
 
 
@@ -59,12 +58,12 @@ Json::Value TorStream::sendReceive(const std::string& type,
   outVal["type"] = type;
   outVal["value"] = msg;
   Json::FastWriter writer;
-  boost::asio::write(socket_, boost::asio::buffer(writer.write(outVal)));
+  boost::asio::write(*socket_, boost::asio::buffer(writer.write(outVal)));
 
   // read from socket until newline
   Log::get().notice("Receiving response from remote host... ");
   boost::asio::streambuf response;
-  boost::asio::read_until(socket_, response, "\n");
+  boost::asio::read_until(*socket_, response, "\n");
 
   // convert to string
   std::istream is(&response);
@@ -83,6 +82,20 @@ Json::Value TorStream::sendReceive(const std::string& type,
   Log::get().notice("I/O complete.");
 
   return responseVal;
+}
+
+
+
+SocketPtr TorStream::getSocket()
+{
+  return socket_;
+}
+
+
+
+boost::asio::io_service& TorStream::getIO()
+{
+  return ios_;
 }
 
 
