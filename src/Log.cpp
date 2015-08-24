@@ -53,7 +53,7 @@ void Log::log(const std::string& type, const std::string& str)
 {
   std::time_t t = std::time(NULL);
   char tStr[100];
-  std::strftime(tStr, sizeof(tStr), "%H:%M", std::localtime(&t));
+  std::strftime(tStr, sizeof(tStr), "%d:%H:%M:%S", std::localtime(&t));
 
   if (fout_.is_open() || !logPath_.empty())
   {
