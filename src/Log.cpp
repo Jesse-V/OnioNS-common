@@ -1,6 +1,7 @@
 
 #include "Log.hpp"
 #include <stdexcept>
+#include <ctime>
 #include <iostream>
 
 std::string Log::logPath_;
@@ -50,14 +51,18 @@ void Log::error(const std::string& str)
 
 void Log::log(const std::string& type, const std::string& str)
 {
+  std::time_t t = std::time(NULL);
+  char tStr[100];
+  std::strftime(tStr, sizeof(tStr), "%H:%M", std::localtime(&t));
+
   if (fout_.is_open() || !logPath_.empty())
   {
-    fout_ << "[" << type << "] " << str << std::endl;
+    fout_ << "[" << type << " | " << tStr << "] " << str << std::endl;
     fout_.flush();
   }
   else
   {
-    std::cout << "[" << type << "] " << str << std::endl;
+    std::cout << "[" << type << " | " << tStr << "] " << str << std::endl;
     std::cout.flush();
   }
 }
