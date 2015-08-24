@@ -15,10 +15,30 @@
 #define ED25519_FN2(fn, suffix) ED25519_FN3(fn, suffix)
 #define ED25519_FN(fn) ED25519_FN2(fn, ED25519_SUFFIX)
 
+#ifdef __clang__
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wold-style-cast"
+  #pragma clang diagnostic ignored "-Wcast-align"
+  #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+  #pragma clang diagnostic ignored "-Wmissing-prototypes"
+  #pragma clang diagnostic ignored "-Wsign-conversion"
+  #pragma clang diagnostic ignored "-Wmissing-variable-declarations"
+#elif __GNUC__
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wpedantic"
+  #pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+
 #include "ed25519-donna.h"
 #include "ed25519.h"
 #include "ed25519-randombytes.h"
 #include "ed25519-hash.h"
+
+#ifdef __clang__
+  #pragma clang diagnostic pop
+#elif __GNUC__
+  #pragma GCC diagnostic push
+#endif
 
 /*
   Generates a (extsk[0..31]) and aExt (extsk[32..63])
@@ -129,7 +149,27 @@ int ED25519_FN(ed25519_sign_open)(const unsigned char* m,
   return ed25519_verify(RS, checkR, 32) ? 0 : -1;
 }
 
+#ifdef __clang__
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wold-style-cast"
+  #pragma clang diagnostic ignored "-Wcast-align"
+  #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+  #pragma clang diagnostic ignored "-Wmissing-prototypes"
+  #pragma clang diagnostic ignored "-Wsign-conversion"
+  #pragma clang diagnostic ignored "-Wmissing-variable-declarations"
+#elif __GNUC__
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wpedantic"
+  #pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+
 #include "ed25519-donna-batchverify.h"
+
+#ifdef __clang__
+  #pragma clang diagnostic pop
+#elif __GNUC__
+  #pragma GCC diagnostic pop
+#endif
 
 /*
   Fast Curve25519 basepoint scalar multiplication

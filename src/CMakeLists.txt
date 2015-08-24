@@ -16,8 +16,6 @@ endif()
 #https://stackoverflow.com/questions/13638408/cmake-override-compile-flags-for-single-files
 SET(JSONCPP_CPP libs/jsoncpp/jsoncpp.cpp)
 set_source_files_properties(${JSONCPP_CPP} PROPERTIES COMPILE_FLAGS -w)
-SET(ED25519_CPP crypto/ed25519.cpp)
-set_source_files_properties(src/crypto/ed25519-donna-portable.h src/crypto/ed25519.h PROPERTIES COMPILE_FLAGS -w)
 
 #include headers to satisfy dependencies
 #libs/CyoEncode libs/jsoncpp
@@ -45,7 +43,7 @@ add_library(onions-common SHARED
   tcp/socks5/Request.cpp
   tcp/socks5/Reply.cpp
 
-  ${ED25519_CPP}
+  crypto/ed25519.cpp
 )
 
 add_library(onions-jsoncpp SHARED
@@ -93,19 +91,7 @@ install(FILES containers/Cache.hpp          DESTINATION ${HEADERS}/containers)
 install(FILES containers/MerkleTree.hpp     DESTINATION ${HEADERS}/containers)
 install(FILES containers/records/Record.hpp   DESTINATION ${HEADERS}/containers/records)
 install(FILES containers/records/CreateR.hpp  DESTINATION ${HEADERS}/containers/records)
-
-install(FILES crypto/ed25519-donna-64bit-tables.h       DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519-donna-64bit-x86.h          DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519-donna-basepoint-table.h    DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519-donna-batchverify.h        DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519-donna.h                    DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519-donna-impl-base.h          DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519-donna-portable.h           DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519-donna-portable-identify.h  DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519.h                          DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519-hash-custom.h              DESTINATION ${HEADERS}/crypto)
-install(FILES crypto/ed25519-randombytes-custom.h       DESTINATION ${HEADERS}/crypto)
-
+install(FILES crypto/ed25519.h                DESTINATION ${HEADERS}/crypto)
 
 #install library dependency headers
 install(FILES libs/jsoncpp/json/json.h    DESTINATION ${HEADERS}/include/json)
