@@ -3,8 +3,9 @@
 #define RECORD_HPP
 
 #include "../../Constants.hpp"
-#include <botan-1.10/botan/botan.h>
-#include <botan-1.10/botan/rsa.h>
+#include <botan/botan.h>
+#include <botan/rsa.h>
+#include <json/json.h>
 #include <memory>
 #include <cstdint>
 #include <string>
@@ -56,7 +57,8 @@ class Record
   // virtual bool makeValid(uint8_t);
   std::string getType() const;
   virtual uint32_t getDifficulty() const;
-  virtual std::string asJSON() const;
+  virtual Json::Value asJSONObj() const;
+  std::string asJSON() const;
   friend std::ostream& operator<<(std::ostream&, const Record&);
 
  protected:

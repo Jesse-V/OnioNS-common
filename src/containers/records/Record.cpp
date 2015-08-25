@@ -7,7 +7,6 @@
 #include <botan/sha2_64.h>
 #include <botan/base64.h>
 #include <CyoEncode/CyoEncode.hpp>
-#include <json/json.h>
 #include <thread>
 #include <cassert>
 
@@ -272,7 +271,7 @@ uint32_t Record::getDifficulty() const
 
 
 
-std::string Record::asJSON() const
+Json::Value Record::asJSONObj() const
 {
   Json::Value obj;
 
@@ -297,9 +296,16 @@ std::string Record::asJSON() const
     obj["recordSig"] = Botan::base64_encode(signature_, Const::SIGNATURE_LEN);
   }
 
+  return obj;
+}
+
+
+
+std::string Record::asJSON() const
+{
   // output in compressed (non-human-friendly) format
   Json::FastWriter writer;
-  return writer.write(obj);
+  return writer.write(asJSONObj());
 }
 
 
