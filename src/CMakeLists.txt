@@ -39,15 +39,9 @@ add_library(onions-cyoencode SHARED
   libs/CyoEncode/CyoEncode.c
 )
 
-target_link_libraries(onions-common onions-cyoencode popt pthread botan-1.10 ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
-
-#custom handling of output debug binary
-set_target_properties(onions-common PROPERTIES DEBUG_POSTFIX "_d")
-
 #install library
 install(TARGETS onions-common                     DESTINATION /usr/lib/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libonions-cyoencode.so DESTINATION /usr/lib/)
-install(FILES ${LIBSCRYPT_LIB}                    DESTINATION /usr/lib/)
 
 #install headers
 set(HEADERS "/usr/include/onions-common/")

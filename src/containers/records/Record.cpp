@@ -2,17 +2,18 @@
 #include "Record.hpp"
 #include "../Utils.hpp"
 #include "../../Log.hpp"
-
-#include <libscrypt.h>
 #include <botan/pubkey.h>
 #include <botan/sha160.h>
 #include <botan/sha2_64.h>
 #include <botan/base64.h>
 #include <CyoEncode/CyoEncode.hpp>
 #include <json/json.h>
-
 #include <thread>
 #include <cassert>
+
+extern "C" {
+#include <libscrypt.h>
+}
 
 
 Record::Record(Botan::RSA_PublicKey* pubKey)
