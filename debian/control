@@ -2,7 +2,7 @@ Source: tor-onions-common
 Section: net
 Priority: optional
 Maintainer: Jesse Victors <kernelcorn@riseup.net>
-Build-Depends: debhelper (>= 7), g++, cmake, make, dpkg-dev, libpopt-dev, libbotan1.10-dev, libasio-dev, libboost-system-dev, libjsoncpp-dev
+Build-Depends: debhelper (>= 7), g++, cmake, make, dpkg-dev, libpopt-dev, libbotan1.10-dev, libasio-dev, libboost-system-dev, libjsoncpp-dev, libscrypt-dev
 Standards-Version: 3.9.5
 Bugs: https://github.com/Jesse-V/OnioNS-common/issues
 Vcs-Git: https://github.com/Jesse-V/OnioNS-common.git
@@ -12,8 +12,7 @@ Package: tor-onions-common
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: tor (>= 0.2.6)
-Conflicts: tor-onions-dev
-Replaces: libscrypt-dev, libscrypt0
+Conflicts: tor-onions-common
 Description: Shared library for the Onion Name System
  OnioNS is a distributed, privacy-enhanced, metadata-free, and highly usable
  DNS for Tor hidden services. OnioNS allows hidden service operators to select

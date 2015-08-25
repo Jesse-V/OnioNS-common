@@ -2,7 +2,6 @@
 #include "MerkleTree.hpp"
 #include <botan/sha2_64.h>
 #include <botan/base64.h>
-#include <json/json.h>
 #include "../Log.hpp"
 
 // the compiler dislikes NodePtr in return statements, this fixes it

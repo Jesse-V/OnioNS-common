@@ -35,7 +35,7 @@ I provide builds for Debian Wheezy in the [Releases section](https://github.com/
 
 * **Install from source**
 
-> 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev** Fedora: **yum install g++ cmake popt-devel botan-devel asio-devel boost-system**
+> 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev libjsoncpp-dev libscrypt-dev** Fedora: **yum install g++ cmake popt-devel botan-devel asio-devel boost-system jsoncpp-devel scrypt-devel**
 > 2. Download and extract the latest release from the [Releases page](https://github.com/Jesse-V/OnioNS-common/releases).
 > 3. **(mkdir build; cd build; cmake ../src; make -j $(grep -c ^processor /proc/cpuinfo); sudo make install)**
 

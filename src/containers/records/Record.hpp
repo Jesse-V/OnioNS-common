@@ -20,6 +20,7 @@ class Record
 
   static const uint8_t NONCE_LEN = 4;
   static const uint8_t SCRYPTED_LEN = 16;
+  static const uint8_t SCRYPT_SALT_LEN = 16;
 
   enum WorkStatus
   {

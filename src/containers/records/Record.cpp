@@ -3,7 +3,7 @@
 #include "../Utils.hpp"
 #include "../../Log.hpp"
 
-#include <libscrypt/libscrypt.h>
+#include <libscrypt.h>
 #include <botan/pubkey.h>
 #include <botan/sha160.h>
 #include <botan/sha2_64.h>
