@@ -44,4 +44,4 @@ I provide builds for Debian Wheezy in the [Releases section](https://github.com/
 
 The rebuild.sh script is available if you are actively developing OnioNS. You will need to install *clang-format-3.6* and *cppcheck* as the script also styles the code and performs a static analysis check.
 
-You can cleanup your build with **(rm -rf build; cd src/libs/libscrypt; make clean)**
+You can cleanup your build with **rm -rf build**
