@@ -12,14 +12,8 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -Wall -Wextra -pedantic -Wdouble-promotion -Wfloat-equal -Wunsafe-loop-optimizations")
 endif()
 
-#JSONCPP needs special compile flags
-#https://stackoverflow.com/questions/13638408/cmake-override-compile-flags-for-single-files
-SET(JSONCPP_CPP libs/jsoncpp/jsoncpp.cpp)
-set_source_files_properties(${JSONCPP_CPP} PROPERTIES COMPILE_FLAGS -w)
-
 #include headers to satisfy dependencies
-#libs/CyoEncode libs/jsoncpp
-include_directories(libs libs/jsoncpp /usr/include/botan-1.10)
+include_directories(libs /usr/include/botan-1.10 /usr/include/jsoncpp)
 
 #libscrypt needs to be compiled into .so
 add_custom_target(libscrypt
@@ -46,26 +40,21 @@ add_library(onions-common SHARED
   crypto/ed25519.cpp
 )
 
-add_library(onions-jsoncpp SHARED
-  ${JSONCPP_CPP}
-)
-
 add_library(onions-cyoencode SHARED
   libs/CyoEncode/CyoDecode.c
   libs/CyoEncode/CyoEncode.c
 )
 
 #link against built and existing dependencies
-add_dependencies(onions-common libscrypt onions-jsoncpp)
+add_dependencies(onions-common libscrypt)
 SET (LIBSCRYPT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/libscrypt.so.0)
-target_link_libraries(onions-common onions-cyoencode onions-jsoncpp ${LIBSCRYPT_LIB} popt pthread botan-1.10 ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
+target_link_libraries(onions-common onions-cyoencode ${LIBSCRYPT_LIB} popt pthread botan-1.10 ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
 
 #custom handling of output debug binary
 set_target_properties(onions-common PROPERTIES DEBUG_POSTFIX "_d")
 
 #install library
 install(TARGETS onions-common                     DESTINATION /usr/lib/)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libonions-jsoncpp.so   DESTINATION /usr/lib/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libonions-cyoencode.so DESTINATION /usr/lib/)
 install(FILES ${LIBSCRYPT_LIB}                    DESTINATION /usr/lib/)
 
@@ -92,9 +81,6 @@ install(FILES containers/MerkleTree.hpp     DESTINATION ${HEADERS}/containers)
 install(FILES containers/records/Record.hpp   DESTINATION ${HEADERS}/containers/records)
 install(FILES containers/records/CreateR.hpp  DESTINATION ${HEADERS}/containers/records)
 install(FILES crypto/ed25519.h                DESTINATION ${HEADERS}/crypto)
-
-#install library dependency headers
-install(FILES libs/jsoncpp/json/json.h    DESTINATION ${HEADERS}/include/json)
 
 #install resources
 set(ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
