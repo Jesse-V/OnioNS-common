@@ -69,7 +69,6 @@ install(FILES crypto/ed25519.h                DESTINATION ${HEADERS}/crypto)
 
 #install resources
 set(ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
-install(FILES ${ASSETS}/cache.json        DESTINATION /var/lib/tor-onions/)
 install(FILES ${ASSETS}/mirrors.json      DESTINATION /var/lib/tor-onions/)
 install(FILES ${ASSETS}/quorum.json       DESTINATION /var/lib/tor-onions/)
 
