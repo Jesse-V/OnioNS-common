@@ -1,3 +1,12 @@
+tor-onions-common (0.6.0.0~trusty) trusty; urgency=medium
+
+  * Timestamp all logs. (#6)
+  * Include support for Ed25519 digital signatures. (#7)
+  * Minor cleanup.
+  * Support for SOCKS5.
+
+ -- Jesse Victors <kernelcorn@riseup.net>  Wed, 26 Aug 2015 23:00:00 -0800
+
 tor-onions-common (0.5.1.0~trusty) trusty; urgency=medium
 
   * Fixed inability to query for subdomains.

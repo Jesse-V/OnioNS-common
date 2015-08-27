@@ -51,6 +51,12 @@ Record::Record(const Record& other)
 
 
 
+Record::~Record()
+{
+}
+
+
+
 void Record::setName(const std::string& name)
 {
   // todo: check for valid name characters
