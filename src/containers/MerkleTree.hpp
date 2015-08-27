@@ -16,13 +16,12 @@ class MerkleTree
     typedef std::shared_ptr<MerkleTree::Node> NodePtr;
 
    public:
-    Node(const UInt8Array& value);
-    Node(const NodePtr&, const NodePtr&, const NodePtr&, const UInt8Array&);
-    ~Node();
+    Node(const SHA384_HASH& value);
+    Node(const NodePtr&, const NodePtr&, const NodePtr&, const SHA384_HASH&);
     Json::Value asJSON() const;
     bool operator==(const NodePtr&) const;
 
-    UInt8Array value_;
+    SHA384_HASH value_;
     NodePtr parent_, left_, right_;
   };
 
@@ -31,13 +30,13 @@ class MerkleTree
  public:
   MerkleTree(const std::vector<RecordPtr>&);
   Json::Value getPathTo(const std::string&) const;
-  uint8_t* getRoot() const;
+  SHA384_HASH getRoot() const;
 
  private:
   void fill(const std::vector<RecordPtr>&);
   void build();
   static std::vector<NodePtr> buildParents(std::vector<NodePtr>&);
-  static uint8_t* join(const NodePtr&, const NodePtr&);
+  static SHA384_HASH join(const NodePtr&, const NodePtr&);
   static UInt8Array concatenate(const NodePtr&, const NodePtr&);
   std::pair<NodePtr, NodePtr> getBounds(const std::string&) const;
   static std::vector<NodePtr> getPath(const NodePtr&);

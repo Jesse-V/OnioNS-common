@@ -2,7 +2,6 @@
 #include "CreateR.hpp"
 #include "../../Common.hpp"
 #include <botan/base64.h>
-#include <cassert>
 
 
 CreateR::CreateR(Botan::RSA_PrivateKey* key,
@@ -31,7 +30,7 @@ CreateR::CreateR(const std::string& contact,
   setName(name);
   setSubdomains(subdomains);
 
-  assert(Botan::base64_decode(nonce_, nonce, false) == NONCE_LEN);
-  assert(Botan::base64_decode(scrypted_, pow, false) == SCRYPTED_LEN);
-  assert(Botan::base64_decode(signature_, sig, false) == Const::SIGNATURE_LEN);
+  Botan::base64_decode(nonce_.data(), nonce, false);
+  Botan::base64_decode(scrypted_.data(), pow, false);
+  Botan::base64_decode(signature_.data(), sig, false);
 }

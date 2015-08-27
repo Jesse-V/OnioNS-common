@@ -18,9 +18,9 @@ extern "C" {
 Record::Record(Botan::RSA_PublicKey* pubKey)
     : privateKey_(nullptr), publicKey_(pubKey), valid_(false), validSig_(false)
 {
-  memset(nonce_, 0, NONCE_LEN);
-  memset(scrypted_, 0, SCRYPTED_LEN);
-  memset(signature_, 0, Const::SIGNATURE_LEN);
+  nonce_.fill(0);
+  scrypted_.fill(0);
+  signature_.fill(0);
 }
 
 
@@ -42,19 +42,11 @@ Record::Record(const Record& other)
       privateKey_(other.privateKey_),
       publicKey_(other.publicKey_),
       valid_(other.valid_),
-      validSig_(other.validSig_)
+      validSig_(other.validSig_),
+      nonce_(other.nonce_),
+      scrypted_(other.scrypted_),
+      signature_(other.signature_)
 {
-  memcpy(nonce_, other.nonce_, NONCE_LEN);
-  memcpy(scrypted_, other.scrypted_, SCRYPTED_LEN);
-  memcpy(signature_, other.signature_, Const::SIGNATURE_LEN);
-}
-
-
-
-Record::~Record()
-{
-  // delete privateKey_;
-  // delete publicKey_;
 }
 
 
@@ -186,11 +178,14 @@ std::string Record::getOnion() const
 
 
 
-uint8_t* Record::getHash() const
+SHA384_HASH Record::getHash() const
 {
   Botan::SHA_384 sha;
-  uint8_t* hash = sha.process(asJSON());
-  return hash;
+  auto hash = sha.process(asJSON());
+
+  SHA384_HASH hashArray;
+  memcpy(hashArray.data(), hash, hashArray.size());
+  return hashArray;
 }
 
 
@@ -216,15 +211,15 @@ void Record::makeValid(uint8_t nWorkers)
           Log::get().notice("Starting " + name);
 
           auto record = std::make_shared<Record>(*this);
-          record->nonce_[NONCE_LEN - 1] = n;
+          record->nonce_[nonce_.size() - 1] = n;
           if (record->makeValid(0, nWorkers, foundSig) == WorkStatus::Success)
           {
             Log::get().notice("Success from " + name);
 
             // save successful answer
-            memcpy(nonce_, record->nonce_, NONCE_LEN);
-            memcpy(scrypted_, record->scrypted_, SCRYPTED_LEN);
-            memcpy(signature_, record->signature_, Const::SIGNATURE_LEN);
+            nonce_ = record->nonce_;
+            scrypted_ = record->scrypted_;
+            signature_ = record->signature_;
             valid_ = true;
           }
 
@@ -291,9 +286,10 @@ Json::Value Record::asJSONObj() const
   // if the domain is valid, add nonce_, scrypted_, and signature_
   if (isValid())
   {
-    obj["nonce"] = Botan::base64_encode(nonce_, NONCE_LEN);
-    obj["pow"] = Botan::base64_encode(scrypted_, SCRYPTED_LEN);
-    obj["recordSig"] = Botan::base64_encode(signature_, Const::SIGNATURE_LEN);
+    obj["nonce"] = Botan::base64_encode(nonce_.data(), nonce_.size());
+    obj["pow"] = Botan::base64_encode(scrypted_.data(), scrypted_.size());
+    obj["recordSig"] =
+        Botan::base64_encode(signature_.data(), signature_.size());
   }
 
   return obj;
@@ -327,19 +323,20 @@ std::ostream& operator<<(std::ostream& os, const Record& dt)
 
   os << "   Nonce: ";
   if (dt.isValid())
-    os << Botan::base64_encode(dt.nonce_, dt.NONCE_LEN) << std::endl;
+    os << Botan::base64_encode(dt.nonce_.data(), dt.nonce_.size()) << std::endl;
   else
     os << "<regeneration required>" << std::endl;
 
   os << "      Proof of Work: ";
   if (dt.isValid())
-    os << Botan::base64_encode(dt.scrypted_, dt.SCRYPTED_LEN) << std::endl;
+    os << Botan::base64_encode(dt.scrypted_.data(), dt.scrypted_.size())
+       << std::endl;
   else
     os << "<regeneration required>" << std::endl;
 
   os << "      Signature: ";
   if (dt.isValid())
-    os << Botan::base64_encode(dt.signature_, Const::SIGNATURE_LEN / 4)
+    os << Botan::base64_encode(dt.signature_.data(), dt.signature_.size() / 4)
        << " ..." << std::endl;
   else
     os << "<regeneration required>" << std::endl;
@@ -363,11 +360,11 @@ Record::WorkStatus Record::makeValid(uint8_t depth, uint8_t inc, bool* abortSig)
   if (isValid())
     return WorkStatus::Aborted;
 
-  if (depth > NONCE_LEN)
+  if (depth > nonce_.size())
     return WorkStatus::NotFound;
 
   // base case
-  if (depth == NONCE_LEN)
+  if (depth == nonce_.size())
   {
     computeValidity(abortSig);  // abortSig stops check
 
@@ -433,15 +430,15 @@ UInt8Array Record::computeCentral()
 
   int index = 0;
   auto pubKey = getPublicKey();
-  const size_t centralLen = str.length() + NONCE_LEN + pubKey.second;
+  const size_t centralLen = str.length() + nonce_.size() + pubKey.second;
   uint8_t* central =
-      new uint8_t[centralLen + SCRYPTED_LEN + Const::SIGNATURE_LEN];
+      new uint8_t[centralLen + scrypted_.size() + signature_.size()];
 
   memcpy(central + index, str.c_str(), str.size());  // copy string into array
   index += str.size();
 
-  memcpy(central + index, nonce_, NONCE_LEN);
-  index += NONCE_LEN;
+  memcpy(central + index, nonce_.data(), nonce_.size());
+  index += nonce_.size();
 
   memcpy(central + index, pubKey.first, pubKey.second);
 
@@ -458,25 +455,25 @@ void Record::updateAppendSignature(UInt8Array& buffer)
 
   if (privateKey_)
   {  // if we have a key, sign it
-    // https://stackoverflow.com/questions/14263346/how-to-perform-asymmetric-encryption-with-botan
+    // https://stackoverflow.com/questions/14263346/
     // http://botan.randombit.net/manual/pubkey.html#signatures
     Botan::PK_Signer signer(*privateKey_, "EMSA-PKCS1-v1_5(SHA-384)");
     auto sig = signer.sign_message(buffer.first, buffer.second, rng);
     validSig_ = true;
 
-    assert(sig.size() == Const::SIGNATURE_LEN);
-    memcpy(signature_, sig, sig.size());
+    assert(sig.size() == signature_.size());
+    memcpy(signature_.data(), sig, sig.size());
   }
   else
   {  // we are validating a public Record, so confirm the signature
     Botan::PK_Verifier verifier(*publicKey_, "EMSA-PKCS1-v1_5(SHA-384)");
-    validSig_ = verifier.verify_message(buffer.first, buffer.second, signature_,
-                                        Const::SIGNATURE_LEN);
+    validSig_ = verifier.verify_message(buffer.first, buffer.second,
+                                        signature_.data(), signature_.size());
   }
 
   // append into buffer
-  memcpy(buffer.first + buffer.second, signature_, Const::SIGNATURE_LEN);
-  buffer.second += Const::SIGNATURE_LEN;
+  memcpy(buffer.first + buffer.second, signature_.data(), signature_.size());
+  buffer.second += signature_.size();
 }
 
 
@@ -485,23 +482,24 @@ void Record::updateAppendSignature(UInt8Array& buffer)
 int Record::updateAppendScrypt(UInt8Array& buffer)
 {
   // allocate and prepare static salt
-  static uint8_t* const SALT = new uint8_t[SCRYPT_SALT_LEN];
+  static uint8_t* const SALT = new uint8_t[Const::SCRYPT_SALT_LEN];
   static bool saltReady = false;
   if (!saltReady)
   {
-    assert(SCRYPT_SALT_LEN == 16);
     std::string piHex("243F6A8885A308D313198A2E03707344");  // pi in hex
     Utils::hex2bin(reinterpret_cast<const uint8_t*>(piHex.c_str()), SALT);
     saltReady = true;
   }
 
   // compute scrypt
-  auto r = libscrypt_scrypt(buffer.first, buffer.second, SALT, SCRYPT_SALT_LEN,
-                            SCR_N, 1, SCR_P, scrypted_, SCRYPTED_LEN);
+  auto r = libscrypt_scrypt(buffer.first, buffer.second, SALT,
+                            Const::SCRYPT_SALT_LEN, Const::SCRYPT_N_LOAD, 1,
+                            Const::SCRYPT_P_LOAD, scrypted_.data(),
+                            scrypted_.size());
 
   // append scrypt output to buffer
-  memcpy(buffer.first + buffer.second, scrypted_, SCRYPTED_LEN);
-  buffer.second += SCRYPTED_LEN;
+  memcpy(buffer.first + buffer.second, scrypted_.data(), scrypted_.size());
+  buffer.second += scrypted_.size();
 
   return r;
 }
@@ -522,7 +520,7 @@ void Record::updateValidity(const UInt8Array& buffer)
     valid_ = true;
   else
   {
-    Log::get().notice(Botan::base64_encode(nonce_, NONCE_LEN) +
+    Log::get().notice(Botan::base64_encode(nonce_.data(), nonce_.size()) +
                       " -> not valid");
   }
 }

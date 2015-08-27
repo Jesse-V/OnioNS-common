@@ -16,7 +16,7 @@ MerkleTree::MerkleTree(const std::vector<RecordPtr>& records)
   build();
   Log::get().notice(
       "Merkle tree root is " +
-      Botan::base64_encode(root_->value_.first, root_->value_.second));
+      Botan::base64_encode(root_->value_.data(), root_->value_.size()));
 }
 
 
@@ -46,9 +46,9 @@ Json::Value MerkleTree::getPathTo(const std::string& name) const
 
 
 
-uint8_t* MerkleTree::getRoot() const
+SHA384_HASH MerkleTree::getRoot() const
 {
-  return root_->value_.first;
+  return root_->value_;
 }
 
 
@@ -61,25 +61,8 @@ uint8_t* MerkleTree::getRoot() const
 void MerkleTree::fill(const std::vector<RecordPtr>& records)
 {
   for (auto r : records)
-  {
-    Json::Value val;
-    Botan::SHA_384 sha;
-
-    // encode authentication information as JSON
-    val["name"] = r->getName();
-    val["hash"] =
-        Botan::base64_encode(sha.process(r->asJSON()), Const::SHA384_LEN);
-
-    Json::FastWriter writer;
-    std::string json = writer.write(val);
-
-    // save JSON as a binary array
-    uint8_t* jsonBin = new uint8_t[json.size()];
-    memcpy(jsonBin, json.c_str(), json.size());
     leaves_.push_back(std::make_pair(
-        r->getName(), std::make_shared<MerkleTree::Node>(
-                          std::make_pair(jsonBin, json.size()))));
-  }
+        r->getName(), std::make_shared<MerkleTree::Node>(r->getHash())));
 }
 
 
@@ -112,10 +95,8 @@ std::vector<NodePtr> MerkleTree::buildParents(std::vector<NodePtr>& nodes)
     NodePtr right = n + 1 < nodes.size() ? nodes[n + 1] : nullptr;
 
     // create parent node
-    uint8_t* hash = join(left, right);
-    auto hashLen = Const::SHA384_LEN;
-    NodePtr parent = std::make_shared<MerkleTree::Node>(
-        nullptr, left, right, std::make_pair(hash, hashLen));
+    NodePtr parent = std::make_shared<MerkleTree::Node>(nullptr, left, right,
+                                                        join(left, right));
     parents.push_back(parent);
 
     // assign parent to children
@@ -132,15 +113,16 @@ std::vector<NodePtr> MerkleTree::buildParents(std::vector<NodePtr>& nodes)
 
 
 // returns a hash of the two nodes' values
-uint8_t* MerkleTree::join(const NodePtr& a, const NodePtr& b)
+SHA384_HASH MerkleTree::join(const NodePtr& a, const NodePtr& b)
 {
-  UInt8Array c = concatenate(a, b);
-
   // hash their concatenation
-  Botan::SHA_384 sha;
-  uint8_t* hash = new uint8_t[Const::SHA384_LEN];
-  memcpy(hash, sha.process(c.first, c.second), Const::SHA384_LEN);
-  return hash;
+  Botan::SHA_384 sha384;
+  UInt8Array c = concatenate(a, b);
+  auto hash = sha384.process(c.first, c.second);
+
+  SHA384_HASH hashArray;
+  memcpy(hashArray.data(), hash, hashArray.size());
+  return hashArray;
 }
 
 
@@ -148,15 +130,14 @@ uint8_t* MerkleTree::join(const NodePtr& a, const NodePtr& b)
 // concatenates the values of two nodes
 UInt8Array MerkleTree::concatenate(const NodePtr& a, const NodePtr& b)
 {
-  auto aLen = a->value_.second;
-  auto bLen = b ? b->value_.second : 0;
-  uint8_t* concat = new uint8_t[aLen + bLen];
+  int totalLen = Const::SHA384_LEN + (b ? Const::SHA384_LEN : 0);
+  uint8_t* concat = new uint8_t[totalLen];
 
-  memcpy(concat, a->value_.first, a->value_.second);
+  memcpy(concat, a->value_.data(), Const::SHA384_LEN);
   if (b)
-    memcpy(concat + a->value_.second, b->value_.first, b->value_.second);
+    memcpy(concat + Const::SHA384_LEN, b->value_.data(), Const::SHA384_LEN);
 
-  return std::make_pair(concat, aLen + bLen);
+  return std::make_pair(concat, totalLen);
 }
 
 
@@ -225,7 +206,7 @@ uint MerkleTree::findCommonPath(const std::vector<NodePtr>& lPath,
 
 
 
-MerkleTree::Node::Node(const UInt8Array& value)
+MerkleTree::Node::Node(const SHA384_HASH& value)
     : Node(nullptr, nullptr, nullptr, value)
 {
 }
@@ -235,43 +216,24 @@ MerkleTree::Node::Node(const UInt8Array& value)
 MerkleTree::Node::Node(const NodePtr& parent,
                        const NodePtr& left,
                        const NodePtr& right,
-                       const UInt8Array& value)
+                       const SHA384_HASH& value)
     : value_(value), parent_(parent), left_(left), right_(right)
 {
 }
 
 
 
-MerkleTree::Node::~Node()
-{
-  delete value_.first;
-}
-
-
-
 Json::Value MerkleTree::Node::asJSON() const
 {
-  auto lValue = left_->value_.first;
-  auto rValue = right_->value_.first;
-  auto lValueLen = left_->value_.second;
-  auto rValueLen = right_->value_.second;
-
   Json::Value json;
-  json[0] = Botan::base64_encode(lValue, lValueLen);
-  if (rValueLen == Const::SHA384_LEN)  // if is leaf
-    json[1] = Botan::base64_encode(rValue, rValueLen);
+  json[0] = Botan::base64_encode(left_->value_.data(), Const::SHA384_LEN);
+  json[0] = Botan::base64_encode(right_->value_.data(), Const::SHA384_LEN);
   return json;
 }
 
 
 
 bool MerkleTree::Node::operator==(const NodePtr& other) const
-{  // todo: I'm sure there's a C method for this
-  if (value_.second != other->value_.second)
-    return false;
-
-  for (ulong n = 0; n < value_.second; n++)
-    if (value_.first[n] != other->value_.first[n])
-      return false;
-  return true;
+{
+  return value_ == other->value_;
 }

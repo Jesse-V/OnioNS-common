@@ -17,6 +17,13 @@ class Const
 
   static const ushort IPC_PORT = 9053;
   static const ushort SERVER_PORT = 10053;
+
+  static const uint8_t NONCE_LEN = 4;
+  static const uint8_t SCRYPTED_LEN = 16;
+  static const uint8_t SCRYPT_SALT_LEN = 16;
+
+  static const uint32_t SCRYPT_N_LOAD = 1 << 20;  // RAM load = O(N)
+  static const uint32_t SCRYPT_P_LOAD = 1 << 0;   // CPU time = O(N * P)
 };
 
 typedef std::array<uint8_t, Const::SHA384_LEN> SHA384_HASH;

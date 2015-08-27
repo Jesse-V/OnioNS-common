@@ -13,12 +13,12 @@ class TorStream
  public:
   TorStream(const std::string&, ushort, const std::string&, ushort);
   Json::Value sendReceive(const std::string&, const std::string&);
-  SocketPtr getSocket();
+  SocketPtr getSocket() const;
   boost::asio::io_service& getIO();
 
  private:
   bool confirmProtocol();
-  void waitUntilReady();
+  void waitUntilReady() const;
 
   static void initCallback(Socks5::Error,
                            boost::system::error_code,

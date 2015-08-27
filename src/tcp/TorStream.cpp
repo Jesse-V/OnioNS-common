@@ -86,7 +86,7 @@ Json::Value TorStream::sendReceive(const std::string& type,
 
 
 
-SocketPtr TorStream::getSocket()
+SocketPtr TorStream::getSocket() const
 {
   return socket_;
 }
@@ -179,7 +179,7 @@ void TorStream::contactCallback(Socks5::Error err,
 
 
 
-void TorStream::waitUntilReady()
+void TorStream::waitUntilReady() const
 {
   std::chrono::milliseconds time(50);
   while (!ready_)

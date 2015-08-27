@@ -16,13 +16,6 @@ typedef std::vector<std::pair<std::string, std::string>> NameList;
 class Record
 {
  public:
-  static const uint64_t SCR_N = 1 << 20;  // RAM load = O(SCR_N)
-  static const uint32_t SCR_P = 1 << 0;   // CPU time = O(SCR_N * SCR_P)
-
-  static const uint8_t NONCE_LEN = 4;
-  static const uint8_t SCRYPTED_LEN = 16;
-  static const uint8_t SCRYPT_SALT_LEN = 16;
-
   enum WorkStatus
   {
     Success,
@@ -47,14 +40,13 @@ class Record
   bool setKey(Botan::RSA_PrivateKey*);
   UInt8Array getPublicKey() const;
   std::string getOnion() const;
-  uint8_t* getHash() const;
+  SHA384_HASH getHash() const;
 
   void makeValid(uint8_t);
   void computeValidity(bool*);  // updates valid_, with flag to abort work
   bool isValid() const;
   bool hasValidSignature() const;
 
-  // virtual bool makeValid(uint8_t);
   std::string getType() const;
   virtual uint32_t getDifficulty() const;
   virtual Json::Value asJSONObj() const;
@@ -74,9 +66,9 @@ class Record
   Botan::RSA_PrivateKey* privateKey_;
   Botan::RSA_PublicKey* publicKey_;
 
-  uint8_t nonce_[NONCE_LEN];
-  uint8_t scrypted_[SCRYPTED_LEN];
-  uint8_t signature_[Const::SIGNATURE_LEN];
+  std::array<uint8_t, Const::NONCE_LEN> nonce_;
+  std::array<uint8_t, Const::SCRYPTED_LEN> scrypted_;
+  std::array<uint8_t, Const::SIGNATURE_LEN> signature_;
   bool valid_, validSig_;
 };
 
