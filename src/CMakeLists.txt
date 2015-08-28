@@ -50,7 +50,6 @@ add_dependencies(onions-common libscrypt)
 SET (LIBSCRYPT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/libscrypt.so.0)
 target_link_libraries(onions-common onions-cyoencode ${LIBSCRYPT_LIB} popt pthread botan-1.10 ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
 
-
 #install library
 install(TARGETS onions-common                     DESTINATION /usr/lib/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libonions-cyoencode.so DESTINATION /usr/lib/)
