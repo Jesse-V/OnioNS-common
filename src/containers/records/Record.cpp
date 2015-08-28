@@ -41,11 +41,11 @@ Record::Record(const Record& other)
       subdomains_(other.subdomains_),
       privateKey_(other.privateKey_),
       publicKey_(other.publicKey_),
-      valid_(other.valid_),
-      validSig_(other.validSig_),
       nonce_(other.nonce_),
       scrypted_(other.scrypted_),
-      signature_(other.signature_)
+      signature_(other.signature_),
+      valid_(other.valid_),
+      validSig_(other.validSig_)
 {
 }
 
@@ -488,7 +488,7 @@ void Record::updateAppendSignature(UInt8Array& buffer)
 int Record::updateAppendScrypt(UInt8Array& buffer)
 {
   // allocate and prepare static salt
-  static uint8_t* const SALT = new uint8_t[Const::SCRYPT_SALT_LEN];
+  static uint8_t* const SALT = new uint8_t[Const::RECORD_SCRYPT_SALT_LEN];
   static bool saltReady = false;
   if (!saltReady)
   {
@@ -499,9 +499,9 @@ int Record::updateAppendScrypt(UInt8Array& buffer)
 
   // compute scrypt
   auto r = libscrypt_scrypt(buffer.first, buffer.second, SALT,
-                            Const::SCRYPT_SALT_LEN, Const::SCRYPT_N_LOAD, 1,
-                            Const::SCRYPT_P_LOAD, scrypted_.data(),
-                            scrypted_.size());
+                            Const::RECORD_SCRYPT_SALT_LEN,
+                            Const::RECORD_SCRYPT_N, 1, Const::RECORD_SCRYPT_P,
+                            scrypted_.data(), scrypted_.size());
 
   // append scrypt output to buffer
   memcpy(buffer.first + buffer.second, scrypted_.data(), scrypted_.size());

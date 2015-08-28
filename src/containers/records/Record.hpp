@@ -66,8 +66,8 @@ class Record
   Botan::RSA_PrivateKey* privateKey_;
   Botan::RSA_PublicKey* publicKey_;
 
-  std::array<uint8_t, Const::NONCE_LEN> nonce_;
-  std::array<uint8_t, Const::SCRYPTED_LEN> scrypted_;
+  std::array<uint8_t, Const::RECORD_NONCE_LEN> nonce_;
+  std::array<uint8_t, Const::RECORD_SCRYPTED_LEN> scrypted_;
   std::array<uint8_t, Const::SIGNATURE_LEN> signature_;
   bool valid_, validSig_;
 };
