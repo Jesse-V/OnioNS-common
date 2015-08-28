@@ -7,12 +7,8 @@
 #include <botan/sha2_64.h>
 #include <botan/base64.h>
 #include <CyoEncode/CyoEncode.hpp>
+#include <libscrypt/libscrypt.h>
 #include <thread>
-#include <cassert>
-
-extern "C" {
-#include <libscrypt.h>
-}
 
 
 Record::Record(Botan::RSA_PublicKey* pubKey)
@@ -28,7 +24,8 @@ Record::Record(Botan::RSA_PublicKey* pubKey)
 Record::Record(Botan::RSA_PrivateKey* key)
     : Record(static_cast<Botan::RSA_PublicKey*>(key))
 {
-  assert(key->get_n().bits() == Const::RSA_LEN);
+  if (key->get_n().bits() == Const::RSA_LEN)
+    Log::get().error("Private RSA key is not 1024 bits in length!");
   setKey(key);
 }
 
@@ -465,10 +462,8 @@ void Record::updateAppendSignature(UInt8Array& buffer)
     // http://botan.randombit.net/manual/pubkey.html#signatures
     Botan::PK_Signer signer(*privateKey_, "EMSA-PKCS1-v1_5(SHA-384)");
     auto sig = signer.sign_message(buffer.first, buffer.second, rng);
-    validSig_ = true;
-
-    assert(sig.size() == signature_.size());
     memcpy(signature_.data(), sig, sig.size());
+    validSig_ = true;
   }
   else
   {  // we are validating a public Record, so confirm the signature
