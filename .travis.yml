@@ -6,7 +6,7 @@ before_install:
   - sudo add-apt-repository "deb mirror://mirrors.ubuntu.com/mirrors.txt trusty main restricted universe"
   - sudo apt-get update -qq
   - sudo apt-get install -qq g++ clang cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev libjsoncpp-dev
-script: mkdir build && cd build && cmake ../src && make
+script: mkdir build && cd build && cmake ../src && make -j 2 && tar -czf onions.orig.tar.gz src/ && cp -rl debian src/debian && cd src/ && dpkg-buildpackage -rfakeroot -us -uc
 language: cpp
 notifications:
   email:
@@ -17,9 +17,3 @@ notifications:
       - "irc.oftc.net#tor-dev"
     on_success: always
     on_failure: never
-    skip_join: true
-deploy:
-  provider: script
-  script: echo "HI"
-  on:
-    branch: master
