@@ -18,7 +18,7 @@ TorStream::TorStream(const std::string& socksHost,
       *resolver.resolve({socksHost, std::to_string(socksPort)});
   socket_->connect(endpoint);
 
-  socks_->initialize({Socks5::AuthMethod::no_authentication},
+  socks_->initialize({Socks5::AuthMethod::NO_AUTHENTICATION},
                      [&](Socks5::Error err, boost::system::error_code ec,
                          Socks5::AuthMethod method)
                      {
@@ -26,8 +26,8 @@ TorStream::TorStream(const std::string& socksHost,
                        TorStream::initCallback(err, ec, method);
 
                        // connect to remote host
-                       Socks5::Request request(Socks5::Command::connect,
-                                               Socks5::AddressType::domainname,
+                       Socks5::Request request(Socks5::Command::CONNECT,
+                                               Socks5::AddressType::DOMAIN_NAME,
                                                remoteHost, remotePort);
 
                        // send request, call TorStream's contact callback
@@ -127,11 +127,11 @@ void TorStream::initCallback(Socks5::Error err,
                              boost::system::error_code ec,
                              Socks5::AuthMethod)
 {
-  if (err == Socks5::Error::no_error)
+  if (err == Socks5::Error::NO_ERROR)
     Log::get().notice("Successfully connected to Tor's Socks5 port.");
-  else if (err == Socks5::Error::init_send_error)
+  else if (err == Socks5::Error::INIT_SEND_ERROR)
     Log::get().error("Socks5 send error: " + ec.message());
-  else if (err == Socks5::Error::init_receive_error)
+  else if (err == Socks5::Error::INIT_RECEIVE_ERROR)
     Log::get().error("Socks5 receive error: " + ec.message());
   else
     Log::get().warn("Unexpected Socks5 response from Tor.");
@@ -143,8 +143,8 @@ void TorStream::contactCallback(Socks5::Error err,
                                 boost::system::error_code ec,
                                 Socks5::Reply reply)
 {
-  if (err == Socks5::Error::no_error &&
-      reply.reply() == Socks5::ReplyCode::succeeded)
+  if (err == Socks5::Error::NO_ERROR &&
+      reply.getReply() == Socks5::ReplyCode::SUCCEEDED)
   {
     // Log::get().notice("Stream established with remote host.");
     ready_ = true;
@@ -155,24 +155,25 @@ void TorStream::contactCallback(Socks5::Error err,
   {
     Log::get().warn("Could not establish a connection with remote host.");
 
-    if (err == Socks5::Error::request_send_error)
+    if (err == Socks5::Error::REQUEST_SEND_ERROR)
       Log::get().warn("Socks5 send issue.");
-    else if (err == Socks5::Error::reply_receive_error)
+    else if (err == Socks5::Error::REPLY_RECEIVE_ERROR)
       Log::get().warn("Socks5 receive issue.");
 
-    if (reply.reply() == Socks5::ReplyCode::general_socks_failure)
+    if (reply.getReply() == Socks5::ReplyCode::GENERAL_SOCKS_FAILURE)
       Log::get().error("Socks5 response: General SOCKS failure.");
-    else if (reply.reply() == Socks5::ReplyCode::connection_not_allowed_ruleset)
+    else if (reply.getReply() ==
+             Socks5::ReplyCode::CONNECTION_NOT_ALLOWED_RULESET)
       Log::get().error("Socks5 response: Connection not allowed.");
-    else if (reply.reply() == Socks5::ReplyCode::network_unreachable)
+    else if (reply.getReply() == Socks5::ReplyCode::NETWORK_UNREACHABLE)
       Log::get().error("Socks5 response: Network unreachable.");
-    else if (reply.reply() == Socks5::ReplyCode::host_unreachable)
+    else if (reply.getReply() == Socks5::ReplyCode::HOST_UNREACHABLE)
       Log::get().error("Socks5 response: General SOCKS failure");
-    else if (reply.reply() == Socks5::ReplyCode::connection_refused)
+    else if (reply.getReply() == Socks5::ReplyCode::CONNECTION_REFUSED)
       Log::get().error("Socks5 response: Connection refused.");
-    else if (reply.reply() == Socks5::ReplyCode::ttl_expired)
+    else if (reply.getReply() == Socks5::ReplyCode::TTL_EXPIRED)
       Log::get().error("Socks5 response: TTL expired.");
-    else if (reply.reply() == Socks5::ReplyCode::address_type_not_supported)
+    else if (reply.getReply() == Socks5::ReplyCode::ADDRESS_TYPE_NOT_SUPPORTED)
       Log::get().error("Socks5 response: Address type not supported.");
   }
 }
