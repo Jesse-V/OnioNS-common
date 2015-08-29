@@ -6,7 +6,7 @@ before_install:
   - sudo add-apt-repository "deb mirror://mirrors.ubuntu.com/mirrors.txt trusty main restricted universe"
   - sudo apt-get update -qq
   - sudo apt-get install -qq g++ clang cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev libjsoncpp-dev
-script: mkdir build && cd build && cmake ../src && cd .. && package=tor-onions-common_$(grep -m 1 -o '(.*)' debian/changelog | cut -c 2- | rev | cut -c 2- | rev) && tar -czf $package.orig.tar.gz src/ && cp -rl debian src/debian && cd src/ && dpkg-buildpackage -rfakeroot -us -uc
+script: (cd src/libs/libscrypt && make) && package=tor-onions-common_$(grep -m 1 -o '(.*)' debian/changelog | cut -c 2- | rev | cut -c 2- | rev) && tar -czf $package.orig.tar.gz src/ && cp -rl debian src/debian && cd src/ && dpkg-buildpackage -rfakeroot -us -uc
 language: cpp
 notifications:
   irc:
