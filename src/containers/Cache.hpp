@@ -12,6 +12,7 @@ class Cache
   static bool add(const std::vector<RecordPtr>&);
   static std::vector<RecordPtr> getSortedList();
   static RecordPtr get(const std::string&);
+  static size_t getRecordCount();
 
  private:
   static std::vector<RecordPtr> records_;

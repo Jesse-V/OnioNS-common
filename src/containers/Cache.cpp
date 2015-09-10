@@ -56,3 +56,10 @@ RecordPtr Cache::get(const std::string& name)
 
   return nullptr;
 }
+
+
+
+size_t Cache::getRecordCount()
+{
+  return records_.size();
+}
