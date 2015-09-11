@@ -43,7 +43,7 @@ add_library(onions-jsoncpp SHARED
   ${JSONCPP_CPP}
 )
 
-add_custom_target(onions-script
+add_custom_target(onions-libscrypt
   COMMAND make
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/
 )
@@ -54,18 +54,17 @@ add_library(onions-cyoencode SHARED
 )
 
 #set versions so that sonames are properly set
-set_target_properties(onions-common    PROPERTIES VERSION 0)
-set_target_properties(onions-jsoncpp   PROPERTIES VERSION 1.6.5)
-set_target_properties(onions-script    PROPERTIES VERSION 1.20)
-set_target_properties(onions-cyoencode PROPERTIES VERSION 1.1.1)
+set_target_properties(onions-common     PROPERTIES VERSION 0)
+set_target_properties(onions-jsoncpp    PROPERTIES VERSION 1.6.5)
+set_target_properties(onions-libscrypt  PROPERTIES VERSION 1.20)
+set_target_properties(onions-cyoencode  PROPERTIES VERSION 1.1.1)
 
-add_dependencies(onions-common onions-script)
+add_dependencies(onions-common onions-libscrypt)
 
 #link against libraries
 SET(LIBSCRYPT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/libscrypt.so.0)
-target_link_libraries(onions-common onions-cyoencode ${LIBSCRYPT_LIB} popt
-  pthread botan-1.10 ${Boost_FILESYSTEM_LIBRARY}
-  ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
+target_link_libraries(onions-common popt pthread botan-1.10
+  ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
 
 #install libraries
 install(TARGETS onions-common     LIBRARY  DESTINATION /usr/lib/onions-common/)
