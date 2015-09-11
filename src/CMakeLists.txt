@@ -12,14 +12,13 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -Wall -Wextra -pedantic -Wdouble-promotion -Wfloat-equal -Wunsafe-loop-optimizations")
 endif()
 
-#include headers to satisfy dependencies
-include_directories(libs /usr/include/botan-1.10 /usr/include/jsoncpp)
+#JSONCPP needs special compile flags
+#https://stackoverflow.com/questions/13638408/cmake-override-compile-flags-for-single-files
+SET(JSONCPP_CPP libs/jsoncpp/jsoncpp.cpp)
+set_source_files_properties(${JSONCPP_CPP} PROPERTIES COMPILE_FLAGS -w)
 
-#libscrypt needs to be compiled into .so
-add_custom_target(libscrypt
-  COMMAND make
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/
-)
+#include headers to satisfy dependencies
+include_directories(libs libs/jsoncpp /usr/include/botan-1.10)
 
 add_library(onions-common SHARED
   Common.cpp
@@ -40,20 +39,39 @@ add_library(onions-common SHARED
   crypto/ed25519.cpp
 )
 
+add_library(onions-jsoncpp SHARED
+  ${JSONCPP_CPP}
+)
+
+add_custom_target(onions-script
+  COMMAND make
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/
+)
+
 add_library(onions-cyoencode SHARED
   libs/CyoEncode/CyoDecode.c
   libs/CyoEncode/CyoEncode.c
 )
 
-#link against built and existing dependencies
-add_dependencies(onions-common libscrypt)
-SET (LIBSCRYPT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/libscrypt.so.0)
-target_link_libraries(onions-common onions-cyoencode ${LIBSCRYPT_LIB} popt pthread botan-1.10 ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
+#set versions so that sonames are properly set
+set_target_properties(onions-common    PROPERTIES VERSION 0)
+set_target_properties(onions-jsoncpp   PROPERTIES VERSION 1.6.5)
+set_target_properties(onions-script    PROPERTIES VERSION 1.20)
+set_target_properties(onions-cyoencode PROPERTIES VERSION 1.1.1)
 
-#install library
-install(TARGETS onions-common                     DESTINATION /usr/lib/)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libonions-cyoencode.so DESTINATION /usr/lib/)
-install(FILES ${LIBSCRYPT_LIB}                    DESTINATION /usr/lib/)
+add_dependencies(onions-common onions-script)
+
+#link against libraries
+SET(LIBSCRYPT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/libscrypt.so.0)
+target_link_libraries(onions-common onions-cyoencode ${LIBSCRYPT_LIB} popt
+  pthread botan-1.10 ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
+
+#install libraries
+install(TARGETS onions-common     LIBRARY  DESTINATION /usr/lib/onions-common/)
+install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION /usr/lib/onions-common/)
+install(TARGETS onions-cyoencode  LIBRARY  DESTINATION /usr/lib/onions-common/)
+install(FILES   ${LIBSCRYPT_LIB}           DESTINATION /usr/lib/onions-common/)
 
 #install headers
 set(HEADERS "/usr/include/onions-common/")
@@ -74,6 +92,9 @@ install(FILES containers/MerkleTree.hpp     DESTINATION ${HEADERS}/containers)
 install(FILES containers/records/Record.hpp   DESTINATION ${HEADERS}/containers/records)
 install(FILES containers/records/CreateR.hpp  DESTINATION ${HEADERS}/containers/records)
 install(FILES crypto/ed25519.h                DESTINATION ${HEADERS}/crypto)
+
+#install library dependency headers
+install(FILES libs/jsoncpp/json/json.h    DESTINATION ${HEADERS}/json)
 
 #install resources
 set(ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
