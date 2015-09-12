@@ -67,13 +67,13 @@ target_link_libraries(onions-common popt pthread botan-1.10
   ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_LIBRARIES})
 
 #install libraries
-install(TARGETS onions-common     LIBRARY  DESTINATION /usr/lib/onions-common/)
-install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION /usr/lib/onions-common/)
-install(TARGETS onions-cyoencode  LIBRARY  DESTINATION /usr/lib/onions-common/)
-install(FILES   ${LIBSCRYPT_LIB}           DESTINATION /usr/lib/onions-common/)
+install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
+install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION lib/onions-common/)
+install(TARGETS onions-cyoencode  LIBRARY  DESTINATION lib/onions-common/)
+install(FILES   ${LIBSCRYPT_LIB}           DESTINATION lib/onions-common/)
 
 #install headers
-set(HEADERS "/usr/include/onions-common/")
+set(HEADERS "include/onions-common/")
 install(FILES Common.hpp              DESTINATION ${HEADERS})
 install(FILES Config.hpp              DESTINATION ${HEADERS})
 install(FILES Constants.hpp           DESTINATION ${HEADERS})
@@ -97,7 +97,7 @@ install(FILES libs/jsoncpp/json/json.h    DESTINATION ${HEADERS}/json)
 
 #install resources
 set(ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
-install(FILES ${ASSETS}/mirrors.json      DESTINATION /var/lib/tor-onions/)
-install(FILES ${ASSETS}/quorum.json       DESTINATION /var/lib/tor-onions/)
+install(FILES ${ASSETS}/mirrors.json      DESTINATION lib/tor-onions/)
+install(FILES ${ASSETS}/quorum.json       DESTINATION lib/tor-onions/)
 
 #http://www.itk.org/Wiki/CMake_FAQ#Can_I_do_.22make_uninstall.22_with_CMake.3F

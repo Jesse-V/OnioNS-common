@@ -22,4 +22,4 @@ Description: Shared library for the Onion Name System
  operators and users. This project aims to address the major usability issue
  that has been with Tor hidden services since their introduction in 2002.
  .
- This packages provides a shared library for the other OnioNS packages.
+ This package provides a shared library for the other OnioNS packages.
