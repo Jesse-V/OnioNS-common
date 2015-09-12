@@ -20,6 +20,8 @@ set_source_files_properties(${JSONCPP_CPP} PROPERTIES COMPILE_FLAGS -w)
 #include headers to satisfy dependencies
 include_directories(libs libs/jsoncpp /usr/include/botan-1.10)
 
+add_definitions(-DINSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
+
 add_library(onions-common SHARED
   Common.cpp
   Config.cpp

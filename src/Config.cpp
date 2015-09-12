@@ -3,16 +3,21 @@
 #include <fstream>
 
 
+#ifndef INSTALL_PREFIX
+#error CMake has not defined INSTALL_PREFIX!
+#endif
+
+
 Json::Value Config::getQuorumNode()
 {
-  return loadFile("/var/lib/tor-onions/quorum.json");
+  return loadFile("INSTALL_PREFIX/lib/tor-onions/quorum.json");
 }
 
 
 
 Json::Value Config::getMirror()
 {
-  return loadFile("/var/lib/tor-onions/mirrors.json");
+  return loadFile("INSTALL_PREFIX/lib/tor-onions/mirrors.json");
 }
 
 
