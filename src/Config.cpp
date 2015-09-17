@@ -1,5 +1,6 @@
 
 #include "Config.hpp"
+#include "Log.hpp"
 #include <fstream>
 
 
@@ -25,7 +26,13 @@ Json::Value Config::getMirror()
 Json::Value Config::loadFile(const std::string& path)
 {
   Json::Value value;
-  std::ifstream file(path, std::ifstream::binary);
-  file >> value;
+
+  std::ifstream file;
+  file.open(path, std::ifstream::binary);
+  if (file.is_open())
+    file >> value;
+  else
+    Log::get().error("Cannot open resource " + path);
+
   return value;
 }
