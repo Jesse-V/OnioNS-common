@@ -10,14 +10,14 @@
 
 Json::Value Config::getQuorumNode()
 {
-  return loadFile("INSTALL_PREFIX/lib/tor-onions/quorum.json");
+  return loadFile(INSTALL_PREFIX + "/lib/tor-onions/quorum.json");
 }
 
 
 
 Json::Value Config::getMirror()
 {
-  return loadFile("INSTALL_PREFIX/lib/tor-onions/mirrors.json");
+  return loadFile(INSTALL_PREFIX + "/lib/tor-onions/mirrors.json");
 }
 
 
