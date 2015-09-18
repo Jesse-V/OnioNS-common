@@ -12,7 +12,8 @@ class TorStream
 {
  public:
   TorStream(const std::string&, ushort, const std::string&, ushort);
-  Json::Value sendReceive(const std::string&, const std::string&);
+  virtual ~TorStream();
+  virtual Json::Value sendReceive(const std::string&, const std::string&);
   SocketPtr getSocket() const;
   boost::asio::io_service& getIO();
 

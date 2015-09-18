@@ -9,7 +9,7 @@ struct ed25519_hash_context
 
 
 
-void ed25519_hash_init(ed25519_hash_context* ctx)
+void ed25519_hash_init(ed25519_hash_context*)
 {
 }
 
