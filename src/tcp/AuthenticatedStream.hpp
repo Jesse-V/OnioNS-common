@@ -21,7 +21,6 @@ class AuthenticatedStream : public TorStream
  private:
   ED_KEY publicKey_;
   ED_SIGNATURE rootSig_;
-  int lastTimestamp_;
 };
 
 #endif
