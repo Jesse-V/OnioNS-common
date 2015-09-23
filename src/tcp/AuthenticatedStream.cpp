@@ -19,13 +19,18 @@ AuthenticatedStream::AuthenticatedStream(const std::string& socksHost,
 Json::Value AuthenticatedStream::sendReceive(const std::string& type,
                                              const std::string& msg)
 {
+  Log::get().notice("AuthStream sendReceive called");
+
   Json::Value received = TorStream::sendReceive(type, msg);
 
   if (!received.isMember("signature"))
-    received["error"] = "Invalid response from server.";
+  {
+    received["type"] = "error";
+    received["value"] = "Missing signature from server.";
+  }
 
   // if the error happened above or any other existing error happened
-  if (!received.isMember("error"))
+  if (received["type"].asString() == "error")
     return received;
 
   std::string data = received["type"].asString() + received["value"].asString();
@@ -34,18 +39,19 @@ Json::Value AuthenticatedStream::sendReceive(const std::string& type,
   const uint8_t* signature = reinterpret_cast<const uint8_t*>(
       received["signature"].asString().c_str());
 
-  // todo: check Merkle root signature, here?
-
   // check signature on transmission
   int check =
       ed25519_sign_open(bytes, data.size(), publicKey_.data(), signature);
   if (check == 1)
   {
-    received["error"] = "Bad Ed25519 signature from server.";
-    Log::get().warn(received["error"].asString());
+    received["type"] = "error";
+    received["value"] = "Bad Ed25519 signature from server.";
   }
   else if (check == -1)
-    Log::get().error("General Ed25519 failure on transmission signature");
+  {
+    received["type"] = "error";
+    received["value"] = "General Ed25519 failure on transmission signature.";
+  }
 
   return received;
 }
