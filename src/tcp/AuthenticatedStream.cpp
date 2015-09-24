@@ -1,16 +1,20 @@
 
 #include "AuthenticatedStream.hpp"
 #include "../Log.hpp"
+#include <botan/base64.h>
 
 
 AuthenticatedStream::AuthenticatedStream(const std::string& socksHost,
                                          ushort socksPort,
                                          const std::string& remoteHost,
                                          ushort remotePort,
-                                         const ED_KEY& publicKey)
-    : TorStream(socksHost, socksPort, remoteHost, remotePort),
-      publicKey_(publicKey)
+                                         const std::string& pubKey64)
+    : TorStream(socksHost, socksPort, remoteHost, remotePort)
 {
+  if (Botan::base64_decode(publicKey_.data(), pubKey64) !=
+      Const::ED25519_KEY_LEN)
+    Log::get().error("Invalid length for public key.");
+
   rootSig_.fill(0);
 }
 

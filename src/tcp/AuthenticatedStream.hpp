@@ -15,7 +15,7 @@ class AuthenticatedStream : public TorStream
                       ushort,
                       const std::string&,
                       ushort,
-                      const ED_KEY&);
+                      const std::string&);
   Json::Value sendReceive(const std::string&, const std::string&);
 
  private:
