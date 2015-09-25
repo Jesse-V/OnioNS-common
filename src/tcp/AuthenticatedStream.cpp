@@ -37,15 +37,22 @@ Json::Value AuthenticatedStream::sendReceive(const std::string& type,
   if (received["type"].asString() == "error")
     return received;
 
-  std::string data = received["type"].asString() + received["value"].asString();
-
-  const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data.c_str());
-  const uint8_t* signature = reinterpret_cast<const uint8_t*>(
-      received["signature"].asString().c_str());
+  ED_SIGNATURE sig;
+  if (Botan::base64_decode(sig.data(), received["signature"].asString()) !=
+      sig.size())
+  {
+    received["type"] = "error";
+    received["value"] = "Bad signature size from server.";
+    return received;
+  }
 
   // check signature on transmission
+  std::string data =
+      received["type"].toStyledString() + received["value"].toStyledString();
+  const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data.c_str());
   int check =
-      ed25519_sign_open(bytes, data.size(), publicKey_.data(), signature);
+      ed25519_sign_open(bytes, data.size(), publicKey_.data(), sig.data());
+
   if (check == 1)
   {
     received["type"] = "error";
