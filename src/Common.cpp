@@ -3,7 +3,9 @@
 #include "containers/records/CreateR.hpp"
 #include "Utils.hpp"
 #include "Log.hpp"
+#include "crypto/ed25519.h"
 #include <botan/sha2_64.h>
+#include <botan/base64.h>
 #include <fstream>
 
 
@@ -49,6 +51,52 @@ std::string Common::getDestination(const RecordPtr& record,
 
   Log::get().error("Record does not contain \"" + source + "\"!");
   return "";
+}
+
+
+
+// modifies sig in place
+std::pair<bool, int> Common::verifyRootSignature(const Json::Value& sigObj,
+                                                 ED_SIGNATURE& sig,
+                                                 const SHA384_HASH& root,
+                                                 const std::string& key)
+{
+  // sanity check
+  if (!sigObj.isMember("signature") || !sigObj.isMember("count"))
+  {
+    Log::get().warn("Invalid root signature.");
+    return std::make_pair(false, -1);
+  }
+
+  // decode signature
+  if (Botan::base64_decode(sig.data(), sigObj["signature"].asString()) !=
+      sig.size())
+  {
+    Log::get().warn("Invalid root signature length from Quorum node.");
+    return std::make_pair(false, -1);
+  }
+
+  // decode public key
+  ED_KEY qPubKey;
+  if (Botan::base64_decode(qPubKey.data(), key) != Const::ED25519_KEY_LEN)
+  {
+    Log::get().warn("Quorum node key has an invalid length.");
+    return std::make_pair(false, -1);
+  }
+
+  // check signature
+  int status = ed25519_sign_open(root.data(), Const::SHA384_LEN, qPubKey.data(),
+                                 sig.data());
+
+  // announce results
+  if (status == 0)
+    Log::get().notice("Valid Ed25519 Quorum signature on root.");
+  else if (status == 1)
+    Log::get().warn("Invalid Ed25519 Quorum signature on root.");
+  else
+    Log::get().warn("General Ed25519 signature failure on root.");
+
+  return std::make_pair(status == 0, sigObj["count"].asInt());
 }
 
 

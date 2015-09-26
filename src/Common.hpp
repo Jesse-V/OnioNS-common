@@ -13,6 +13,10 @@ class Common
   static RecordPtr parseRecord(const Json::Value&);
   static Json::Value toJSON(const std::string&);
   static std::string getDestination(const RecordPtr&, const std::string&);
+  static std::pair<bool, int> verifyRootSignature(const Json::Value&,
+                                                  ED_SIGNATURE&,
+                                                  const SHA384_HASH&,
+                                                  const std::string&);
 
  private:
   static RecordPtr assembleRecord(const Json::Value&);
