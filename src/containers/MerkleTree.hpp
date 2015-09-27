@@ -15,8 +15,8 @@ class MerkleTree
  public:
   MerkleTree(const std::vector<RecordPtr>&);
   Json::Value generateSubtree(const std::string&) const;
-  static bool verifySubtree(const Json::Value&, const RecordPtr&);
-  static bool verifyRoot(const Json::Value&, const std::string&);
+  static bool doesContain(const Json::Value&, const RecordPtr&);
+  static SHA384_HASH extractRoot(const Json::Value&);
   SHA384_HASH getRootHash() const;
 
  private:
@@ -60,6 +60,10 @@ class MerkleTree
   Json::Value generatePath(const LeafPtr&) const;
   Json::Value generateSpan(const LeafPtr&,
                            const std::vector<LeafPtr>::const_iterator&) const;
+
+  static bool verifyPath(const Json::Value& value, const RecordPtr&);
+  static bool verifySpan(const Json::Value& value, const RecordPtr&);
+
   static bool isLessThan(const LeafPtr&, const LeafPtr&);
 
   std::vector<LeafPtr> leaves_;

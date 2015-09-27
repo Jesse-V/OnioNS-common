@@ -50,18 +50,49 @@ Json::Value MerkleTree::generateSubtree(const std::string& domain) const
 
 
 
-bool MerkleTree::verifySubtree(const Json::Value&, const RecordPtr&)
+// tests whether the record is contained within the subtree
+bool MerkleTree::doesContain(const Json::Value& subtree,
+                             const RecordPtr& record)
 {
-  // todo: check
+  // https://stackoverflow.com/questions/1596668
+  if (subtree.isMember("left") != subtree.isMember("right"))
+    Log::get().warn("Malformed Merkle subtree, incomplete span.");
+
+  if (subtree.isMember("left") || subtree.isMember("right"))
+  {
+    // verify each path's validity, then check if the span covers the Record
+    if (!verifyPath(subtree["left"], record) ||
+        !verifyPath(subtree["right"], record) || !verifySpan(subtree, record))
+      return false;
+  }
+  else if (!verifyPath(subtree, record))  // no span, so check main path
+    return false;
+
   return true;
 }
 
 
 
-bool MerkleTree::verifyRoot(const Json::Value&, const std::string&)
+SHA384_HASH MerkleTree::extractRoot(const Json::Value& subtree)
 {
-  // todo: check if base of subtree equals the string
-  return true;
+  // https://stackoverflow.com/questions/1596668
+  if (subtree.isMember("left") != subtree.isMember("right"))
+    Log::get().warn("Malformed Merkle subtree, incomplete span.");
+
+  std::string base64Root;
+  if (subtree.isMember("left"))
+  {
+    Json::Value leftPath = subtree["left"];
+    base64Root = leftPath[leftPath.size() - 1]["hash"].asString();
+  }
+  else if (!subtree.isMember("right"))
+    base64Root = subtree[subtree.size() - 1]["hash"].asString();
+
+  SHA384_HASH root;
+  if (Botan::base64_decode(root.data(), base64Root) != Const::SHA384_LEN)
+    Log::get().warn("Invalid root size for Merkle subtree.");
+
+  return root;
 }
 
 
@@ -140,7 +171,7 @@ Json::Value MerkleTree::generatePath(const LeafPtr& leaf) const
   leafVal["hash"] = leaf->getBase64Hash();
   result.append(leafVal);
 
-  NodePtr node = leaf;
+  NodePtr node = leaf->getParent();
   while (node)
   {
     result.append(node->asValue());
@@ -174,6 +205,39 @@ Json::Value MerkleTree::generateSpan(
 
 
 
+// checks the cryptographic validity of the paths to the Record
+bool MerkleTree::verifyPath(const Json::Value& path, const RecordPtr& record)
+{
+  // check name
+  if (path[0]["name"] != record->getName())
+    return false;
+
+  // check record's hash against first hash
+  Leaf leaf(record, nullptr);
+  if (path[0]["hash"] != leaf.getBase64Hash())
+    return false;
+
+  for (int j = 1; j < path.size(); j++)
+  {
+    // if previous hashes do not match either current match, return false
+    // concatenateHashes
+    // trouble is that I need the neighboring Record, yes? no
+  }
+
+  return true;
+}
+
+
+
+// checks whether a span bounds the Record
+bool MerkleTree::verifySpan(const Json::Value& subtree, const RecordPtr& record)
+{
+  return subtree["left"][0]["name"].asString() < record->getName() &&
+         record->getName() < subtree["right"][0]["name"].asString();
+}
+
+
+
 bool MerkleTree::isLessThan(const LeafPtr& a, const LeafPtr& b)
 {
   return a->getName() < b->getName();
@@ -182,6 +246,13 @@ bool MerkleTree::isLessThan(const LeafPtr& a, const LeafPtr& b)
 
 
 // ************************** SUBCLASS METHODS **************************** //
+
+
+
+MerkleTree::Node::Node()
+    : parent_(nullptr), leftChild_(nullptr), rightChild_(nullptr)
+{
+}
 
 
 
