@@ -26,20 +26,24 @@ MerkleTree::MerkleTree(const std::vector<RecordPtr>& records)
 
 Json::Value MerkleTree::generateSubtree(const std::string& domain) const
 {
-  // todo: test for base/trivial cases
+  if (leaves_.empty())
+  {
+    Json::Value empty;
+    return empty;
+  }
 
   LeafPtr needle = std::make_shared<Leaf>(domain);
   auto lowerBound =
-      std::lower_bound(leaves_.begin(), leaves_.end(), needle, compareLeaves);
+      std::lower_bound(leaves_.begin(), leaves_.end(), needle, isLessThan);
 
-  Log::get().notice("Found domain at " +
+  Log::get().notice("Lower bound on domain at " +
                     std::to_string(lowerBound - leaves_.begin()));
 
   Json::Value result;
-  if (lowerBound != leaves_.end() && needle >= *lowerBound)
+  if (lowerBound != leaves_.end() && !isLessThan(needle, *lowerBound))
     result = generatePath(*lowerBound);  // found, so return single path
   else
-    result = generateSpan(lowerBound);  // not found, so return span
+    result = generateSpan(needle, lowerBound);  // not found, so return span
 
   return result;
 }
@@ -89,6 +93,7 @@ SHA384_HASH MerkleTree::buildTree(std::vector<NodePtr>& row)
       NodePtr node = std::make_shared<Node>(nullptr, hash);
 
       nextRow.push_back(node);
+      node->setChildren(left, j + 1 < row.size() ? right : nullptr);
       left->setParent(node);
       right->setParent(node);
     }
@@ -138,11 +143,7 @@ Json::Value MerkleTree::generatePath(const LeafPtr& leaf) const
   NodePtr node = leaf;
   while (node)
   {
-    Json::Value nodeVal;  // todo: need to get child hashes to verify
-    nodeVal["left"] = node->getBase64Hash();
-    nodeVal["right"] = node->getBase64Hash();
-
-    result.append(nodeVal);
+    result.append(node->asValue());
     node = node->getParent();
   }
 
@@ -152,26 +153,28 @@ Json::Value MerkleTree::generatePath(const LeafPtr& leaf) const
 
 
 Json::Value MerkleTree::generateSpan(
+    const LeafPtr& needle,
     const std::vector<LeafPtr>::const_iterator& lowerBound) const
 {
   Log::get().notice("Generating span through Merkle tree.");
 
-  // todo: get left bound, then get right bound
+  auto upperBound =
+      std::upper_bound(leaves_.begin(), leaves_.end(), needle, isLessThan);
 
-  // auto upperBound = std::upper_bounds(leaves_.begin(), leaves_.end(), needle,
-  // compareLeaves);
+  Json::Value lowerPath = generatePath(*lowerBound);
+  Json::Value upperPath = generatePath(*upperBound);
 
+  // todo: return "common" path where the two paths converge
 
   Json::Value result;
-  // todo
-
-  // left, right
+  result["left"] = lowerPath;
+  result["right"] = upperPath;
   return result;
 }
 
 
 
-bool MerkleTree::compareLeaves(const LeafPtr& a, const LeafPtr& b)
+bool MerkleTree::isLessThan(const LeafPtr& a, const LeafPtr& b)
 {
   return a->getName() < b->getName();
 }
@@ -183,7 +186,7 @@ bool MerkleTree::compareLeaves(const LeafPtr& a, const LeafPtr& b)
 
 
 MerkleTree::Node::Node(const NodePtr& parent, const SHA384_HASH& hash)
-    : parent_(parent), hash_(hash)
+    : parent_(parent), leftChild_(nullptr), rightChild_(nullptr), hash_(hash)
 {
 }
 
@@ -192,6 +195,14 @@ MerkleTree::Node::Node(const NodePtr& parent, const SHA384_HASH& hash)
 void MerkleTree::Node::setParent(const NodePtr& parent)
 {
   parent_ = parent;
+}
+
+
+
+void MerkleTree::Node::setChildren(const NodePtr& left, const NodePtr& right)
+{
+  leftChild_ = left;
+  rightChild_ = right;
 }
 
 
@@ -213,6 +224,20 @@ SHA384_HASH MerkleTree::Node::getHash() const
 std::string MerkleTree::Node::getBase64Hash() const
 {
   return Botan::base64_encode(hash_.data(), Const::SHA384_LEN);
+}
+
+
+
+Json::Value MerkleTree::Node::asValue() const
+{
+  Json::Value value;
+
+  if (leftChild_)
+    value["left"] = leftChild_->getBase64Hash();
+  if (rightChild_)
+    value["right"] = rightChild_->getBase64Hash();
+
+  return value;
 }
 
 
