@@ -1,54 +1,70 @@
 
 #include "MerkleTree.hpp"
+#include "../Log.hpp"
 #include <botan/sha2_64.h>
 #include <botan/base64.h>
-#include "../Log.hpp"
-
-// the compiler dislikes NodePtr in return statements, this fixes it
-#define NodePtr std::shared_ptr<MerkleTree::Node>
 
 
-// records must be in alphabetical order according to record.getName()
+// records must be sorted by name
 MerkleTree::MerkleTree(const std::vector<RecordPtr>& records)
 {
-  Log::get().notice("Building Merkle tree...");
-  fill(records);
-  build();
-  Log::get().notice(
-      "Merkle tree root is " +
-      Botan::base64_encode(root_->value_.data(), root_->value_.size()));
+  Log::get().notice("Building Merkle tree of size " +
+                    std::to_string(records.size()));
+
+  std::vector<NodePtr> row;
+  for (auto r : records)
+  {
+    LeafPtr leaf = std::make_shared<Leaf>(r, nullptr);
+    leaves_.push_back(leaf);
+    row.push_back(leaf);
+  }
+
+  rootHash_ = buildTree(row);
 }
 
 
 
-// either the path to the existing Record, or to a subtree that spans the name
-Json::Value MerkleTree::getPathTo(const std::string& name) const
+Json::Value MerkleTree::generateSubtree(const std::string& domain) const
 {
-  auto bounds = getBounds(name);
-  auto lPath = getPath(bounds.first);
-  auto rPath = getPath(bounds.second);
+  // todo: test for base/trivial cases
 
-  Json::Value jsonObj;
-  uint split = findCommonPath(lPath, rPath, jsonObj);  // sets jsonObj["common"]
+  LeafPtr needle = std::make_shared<Leaf>(domain);
+  auto lowerBound =
+      std::lower_bound(leaves_.begin(), leaves_.end(), needle, compareLeaves);
 
-  Json::Value leftBranch;
-  for (uint n = split; n < lPath.size(); n++)
-    leftBranch[split - n] = lPath[n]->asJSON();
-  jsonObj["left"] = leftBranch;
+  Log::get().notice("Found domain at " +
+                    std::to_string(lowerBound - leaves_.begin()));
 
-  Json::Value rightBranch;
-  for (uint n = split; n < rPath.size(); n++)
-    rightBranch[split - n] = rPath[n]->asJSON();
-  jsonObj["right"] = leftBranch;
+  Json::Value result;
+  if (lowerBound != leaves_.end() && needle >= *lowerBound)
+    result = generatePath(*lowerBound);  // found, so return single path
+  else
+    result = generateSpan(lowerBound);  // not found, so return span
 
-  return jsonObj;
+  return result;
 }
 
 
 
-SHA384_HASH MerkleTree::getRoot() const
+bool MerkleTree::verifySubtree(const Json::Value&, const RecordPtr&)
 {
-  return root_->value_;
+  // todo: check
+  return true;
+}
+
+
+
+bool MerkleTree::verifyRoot(const Json::Value&, const std::string&)
+{
+  // todo: check if base of subtree equals the string
+  return true;
+}
+
+
+
+SHA384_HASH MerkleTree::getRootHash() const
+{
+  return rootHash_;
 }
 
 
@@ -57,183 +73,164 @@ SHA384_HASH MerkleTree::getRoot() const
 
 
 
-// builds leaves of tree from records
-void MerkleTree::fill(const std::vector<RecordPtr>& records)
+SHA384_HASH MerkleTree::buildTree(std::vector<NodePtr>& row)
 {
-  for (auto r : records)
-    leaves_.push_back(std::make_pair(
-        r->getName(), std::make_shared<MerkleTree::Node>(r->getHash())));
-}
-
-
-
-// builds the depth of the tree, sets pointers and root_
-void MerkleTree::build()
-{
-  // convert to vector of NodePtrs
-  std::vector<NodePtr> nodes;
-  for (auto leaf : leaves_)
-    nodes.push_back(leaf.second);
-
-  // build each level until we reach the root
-  while (nodes.size() > 1)
-    nodes = buildParents(nodes);
-
-  root_ = nodes[0];
-}
-
-
-
-// builds the level above the children, updates parent_ for the nodes
-std::vector<NodePtr> MerkleTree::buildParents(std::vector<NodePtr>& nodes)
-{
-  std::vector<NodePtr> parents;
-
-  for (ulong n = 0; n < nodes.size(); n += 2)
+  // build breadth-first, row by row
+  while (row.size() > 1)
   {
-    NodePtr left = nodes[n];
-    NodePtr right = n + 1 < nodes.size() ? nodes[n + 1] : nullptr;
+    std::vector<NodePtr> nextRow;
+    for (size_t j = 0; j < row.size(); j += 2)
+    {
+      // get left and right, or get left twice if row size is odd
+      NodePtr left = row[j + 0];
+      NodePtr right = j + 1 < row.size() ? row[j + 1] : left;
 
-    // create parent node
-    NodePtr parent = std::make_shared<MerkleTree::Node>(nullptr, left, right,
-                                                        join(left, right));
-    parents.push_back(parent);
+      SHA384_HASH hash = concatenateHashes(left, right);
+      NodePtr node = std::make_shared<Node>(nullptr, hash);
 
-    // assign parent to children
-    left->parent_ = parent;
-    if (right)
-      right->parent_ = parent;
+      nextRow.push_back(node);
+      left->setParent(node);
+      right->setParent(node);
+    }
+
+    row = nextRow;
   }
 
-  Log::get().notice("Merkle level width: " + std::to_string(parents.size()));
-
-  return parents;
+  return row[0]->getHash();
 }
 
 
 
 // returns a hash of the two nodes' values
-SHA384_HASH MerkleTree::join(const NodePtr& a, const NodePtr& b)
+SHA384_HASH MerkleTree::concatenateHashes(const NodePtr& a, const NodePtr& b)
 {
   // hash their concatenation
   Botan::SHA_384 sha384;
-  UInt8Array c = concatenate(a, b);
-  auto hash = sha384.process(c.first, c.second);
 
-  SHA384_HASH hashArray;
-  memcpy(hashArray.data(), hash, hashArray.size());
-  return hashArray;
+  std::array<uint8_t, 2 * Const::SHA384_LEN> concat;
+  memcpy(concat.data(), a->getHash().data(), Const::SHA384_LEN);
+  memcpy(concat.data() + Const::SHA384_LEN, b->getHash().data(),
+         Const::SHA384_LEN);
+
+  SHA384_HASH result;
+  auto hash = sha384.process(concat.data(), concat.size());
+  memcpy(result.data(), hash, hash.size());
+
+  Log::get().notice(std::to_string(hash.size()) + " | " +
+                    std::to_string(Const::SHA384_LEN));
+
+  return result;
 }
 
 
 
-// concatenates the values of two nodes
-UInt8Array MerkleTree::concatenate(const NodePtr& a, const NodePtr& b)
+Json::Value MerkleTree::generatePath(const LeafPtr& leaf) const
 {
-  int totalLen = Const::SHA384_LEN + (b ? Const::SHA384_LEN : 0);
-  uint8_t* concat = new uint8_t[totalLen];
+  Log::get().notice("Generating single path through Merkle tree.");
 
-  memcpy(concat, a->value_.data(), Const::SHA384_LEN);
-  if (b)
-    memcpy(concat + Const::SHA384_LEN, b->value_.data(), Const::SHA384_LEN);
+  Json::Value result;
 
-  return std::make_pair(concat, totalLen);
-}
+  Json::Value leafVal;
+  leafVal["name"] = leaf->getName();
+  leafVal["hash"] = leaf->getBase64Hash();
+  result.append(leafVal);
 
-
-
-// returns either <name, name> or two leaves that span name
-std::pair<NodePtr, NodePtr> MerkleTree::getBounds(const std::string& name) const
-{  // todo: binary search
-
-  if (leaves_.size() == 0)
-    return std::make_pair(nullptr, nullptr);
-
-  // find left bound
-  ulong left = 0;
-  while (left < leaves_.size() && leaves_[left].first < name)
-    left++;
-
-  if (leaves_[left].first == name)  // if name has been found
-    return std::make_pair(leaves_[left].second, leaves_[left].second);
-
-  // not found, so find right bound
-  ulong right = leaves_.size() - 1;
-  while (right > 0 && leaves_[right].first > name)
-    right--;
-
-  // return bounds
-  return std::make_pair(leaves_[left].second, leaves_[right].second);
-}
-
-
-
-std::vector<NodePtr> MerkleTree::getPath(const NodePtr& leaf)
-{
-  std::vector<NodePtr> path;
   NodePtr node = leaf;
-  while (node->parent_ != nullptr)
+  while (node)
   {
-    path.push_back(node);
-    node = node->parent_;
+    Json::Value nodeVal;  // todo: need to get child hashes to verify
+    nodeVal["left"] = node->getBase64Hash();
+    nodeVal["right"] = node->getBase64Hash();
+
+    result.append(nodeVal);
+    node = node->getParent();
   }
 
-  std::reverse(path.begin(), path.end());
-  return path;
+  return result;
 }
 
 
 
-uint MerkleTree::findCommonPath(const std::vector<NodePtr>& lPath,
-                                const std::vector<NodePtr>& rPath,
-                                Json::Value& pathObj)
+Json::Value MerkleTree::generateSpan(
+    const std::vector<LeafPtr>::const_iterator& lowerBound) const
 {
-  uint index = 0;
+  Log::get().notice("Generating span through Merkle tree.");
 
-  while (index < lPath.size() && index < rPath.size() &&
-         lPath[index] == rPath[index])
-  {
-    pathObj[index] = lPath[index]->asJSON();
-    index++;
-  }
+  // todo: get left bound, then get right bound
 
-  return index;
+  // auto upperBound = std::upper_bounds(leaves_.begin(), leaves_.end(), needle,
+  // compareLeaves);
+
+
+  Json::Value result;
+  // todo
+
+  // left, right
+  return result;
 }
 
 
 
-// ************************** TREE NODE METHODS **************************** //
-
-
-
-MerkleTree::Node::Node(const SHA384_HASH& value)
-    : Node(nullptr, nullptr, nullptr, value)
+bool MerkleTree::compareLeaves(const LeafPtr& a, const LeafPtr& b)
 {
+  return a->getName() < b->getName();
 }
 
 
 
-MerkleTree::Node::Node(const NodePtr& parent,
-                       const NodePtr& left,
-                       const NodePtr& right,
-                       const SHA384_HASH& value)
-    : value_(value), parent_(parent), left_(left), right_(right)
+// ************************** SUBCLASS METHODS **************************** //
+
+
+
+MerkleTree::Node::Node(const NodePtr& parent, const SHA384_HASH& hash)
+    : parent_(parent), hash_(hash)
 {
 }
 
 
 
-Json::Value MerkleTree::Node::asJSON() const
+void MerkleTree::Node::setParent(const NodePtr& parent)
 {
-  Json::Value json;
-  json[0] = Botan::base64_encode(left_->value_.data(), Const::SHA384_LEN);
-  json[0] = Botan::base64_encode(right_->value_.data(), Const::SHA384_LEN);
-  return json;
+  parent_ = parent;
 }
 
 
 
-bool MerkleTree::Node::operator==(const NodePtr& other) const
+MerkleTree::NodePtr MerkleTree::Node::getParent() const
 {
-  return value_ == other->value_;
+  return parent_;
+}
+
+
+
+SHA384_HASH MerkleTree::Node::getHash() const
+{
+  return hash_;
+}
+
+
+
+std::string MerkleTree::Node::getBase64Hash() const
+{
+  return Botan::base64_encode(hash_.data(), Const::SHA384_LEN);
+}
+
+
+
+MerkleTree::Leaf::Leaf(const RecordPtr& record, const NodePtr& parent)
+    : Node(parent, record->getHash()), name_(record->getName())
+{
+}
+
+
+
+MerkleTree::Leaf::Leaf(const std::string& name) : name_(name)
+{
+}
+
+
+
+std::string MerkleTree::Leaf::getName() const
+{
+  return name_;
 }
