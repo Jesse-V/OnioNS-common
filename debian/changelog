@@ -1,3 +1,15 @@
+tor-onions-common (0.7.0.0~trusty) trusty; urgency=medium
+
+  * Use Merkle tree to prevent non-Quorum name server from lying to client.
+  * Verify signatures on all responses from a remote server.
+  * Improve diagnostics.
+  * Add Clang's scan-build static analysis tool to build scripts.
+  * Install to /usr/local/ when compiled from source.
+  * Fix memory leak in Record class.
+  * Various bugfixes.
+
+ -- Jesse Victors <kernelcorn@riseup.net>  Mon, 28 Sept 2015 13:00:00 -0800
+
 tor-onions-common (0.6.1.0~trusty) trusty; urgency=medium
 
   * Rename numerical constants.
