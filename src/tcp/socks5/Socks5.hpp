@@ -40,7 +40,7 @@ class Socks5
   struct initRequest
   {
     const uint8_t version = 0x05;
-    size_t nmethods;
+    uint8_t nmethods;
     AuthMethod methods[255];
   } initRequest_;
 

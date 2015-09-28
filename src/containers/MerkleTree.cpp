@@ -219,7 +219,7 @@ bool MerkleTree::verifyPath(const Json::Value& path, const RecordPtr& record)
 
   for (size_t j = 1; j < path.size(); j++)
   {
-    //todo:
+    // todo:
     // if previous hashes do not match either current match, return false
     // concatenateHashes
     // trouble is that I need the neighboring Record, yes? no

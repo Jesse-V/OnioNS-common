@@ -424,7 +424,7 @@ void Record::computeValidity(bool* abortSig)
 
   updateAppendSignature(buffer);  // update signature_, append to buffer
   updateValidity(buffer);         // update valid_ based on entire buffer
-  delete[] buffer.first;            // cleanup
+  delete[] buffer.first;          // cleanup
 }
 
 
