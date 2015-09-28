@@ -11,7 +11,7 @@
 #include <string>
 
 typedef std::pair<uint8_t*, size_t> UInt8Array;
-typedef std::vector<std::pair<std::string, std::string>> NameList;
+typedef std::vector<std::pair<std::string, std::string> > NameList;
 
 class Record
 {

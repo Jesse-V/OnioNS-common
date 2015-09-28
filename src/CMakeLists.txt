@@ -5,7 +5,7 @@ project(onions-common)
 find_package(Boost COMPONENTS system REQUIRED)
 
 #compiler options for Clang and GCC/G++
-SET(COMMON_FLAGS "-g -O3 --std=c++11 -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM")
+SET(COMMON_FLAGS "-g -O3 -std=c++11 -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM")
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -Wno-c++98-compat-pedantic -pedantic -Weverything -Wno-exit-time-destructors -Wno-weak-vtables -Wno-padded -Wno-deprecated -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-missing-noreturn -Wno-sign-conversion -Wno-shadow")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")

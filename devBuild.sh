@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# This script re-styles the code to a format very similar to Chromium's style
+# and then builds the project using the Clang 3.6 compiler. This is the main
+# script to use if you are compiling frequently.
+
+# Please install clang-format-3.6 and clang-3.6 before running this script.
+
 echo "Re-styling code...        ----------------------------------------------"
 
 # make the code-style consistent
@@ -13,8 +19,8 @@ done
 
 echo "Preparing build...        ----------------------------------------------"
 
-export CXX=/usr/bin/clang++
-export CC=/usr/bin/clang
+export CXX=clang++-3.6
+export CC=clang-3.6
 
 mkdir -p build/
 cd build
@@ -22,10 +28,11 @@ cmake ../src # -DCMAKE_BUILD_TYPE=Debug
 
 echo "Compiling...              ----------------------------------------------"
 if (make -j $(grep -c ^processor /proc/cpuinfo)) then
-  echo "Static analysis...        ----------------------------------------------"
   cd ..
-  find src -type f -follow -print | cppcheck -i "src/assets" -i "src/libs" -i "src/crypto" --enable=all --platform=unix64 --inconclusive --file-list=-
+  echo "Compilation successful!"
 else
-  rm -f onions-common
   cd ..
+  rm -rf build/
 fi
+
+
