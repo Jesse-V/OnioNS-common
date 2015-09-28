@@ -20,6 +20,8 @@ MerkleTree::MerkleTree(const std::vector<RecordPtr>& records)
   }
 
   rootHash_ = buildTree(row);
+  Log::get().notice("Built tree. Root is " +
+                    Botan::base64_encode(rootHash_.data(), Const::SHA384_LEN));
 }
 
 
@@ -54,19 +56,27 @@ Json::Value MerkleTree::generateSubtree(const std::string& domain) const
 bool MerkleTree::doesContain(const Json::Value& subtree,
                              const RecordPtr& record)
 {
-  // https://stackoverflow.com/questions/1596668
-  if (subtree.isMember("left") != subtree.isMember("right"))
-    Log::get().warn("Malformed Merkle subtree, incomplete span.");
-
-  if (subtree.isMember("left") || subtree.isMember("right"))
-  {
-    // verify each path's validity, then check if the span covers the Record
-    if (!verifyPath(subtree["left"], record) ||
-        !verifyPath(subtree["right"], record) || !verifySpan(subtree, record))
+  if (subtree.isArray())
+  {  // check main path
+    if (!verifyPath(subtree, record))
       return false;
   }
-  else if (!verifyPath(subtree, record))  // no span, so check main path
-    return false;
+  else
+  {
+    // https://stackoverflow.com/questions/1596668
+    if (subtree.isMember("left") != subtree.isMember("right"))
+      Log::get().warn("Malformed Merkle subtree, incomplete span.");
+
+    if (subtree.isMember("left") || subtree.isMember("right"))
+    {
+      // verify each path's validity, then check if the span covers the Record
+      if (!verifyPath(subtree["left"], record) ||
+          !verifyPath(subtree["right"], record) || !verifySpan(subtree, record))
+        return false;
+    }
+    else
+      Log::get().warn("Subtree is missing both branches!");
+  }
 
   return true;
 }
@@ -75,18 +85,28 @@ bool MerkleTree::doesContain(const Json::Value& subtree,
 
 SHA384_HASH MerkleTree::extractRoot(const Json::Value& subtree)
 {
-  // https://stackoverflow.com/questions/1596668
-  if (subtree.isMember("left") != subtree.isMember("right"))
-    Log::get().warn("Malformed Merkle subtree, incomplete span.");
-
   std::string base64Root;
-  if (subtree.isMember("left"))
-  {
-    Json::Value leftPath = subtree["left"];
-    base64Root = leftPath[leftPath.size() - 1]["hash"].asString();
-  }
-  else if (!subtree.isMember("right"))
+
+  // extract base64-encoded string
+  if (subtree.isArray())
+  {  // extract root from single path
     base64Root = subtree[subtree.size() - 1]["hash"].asString();
+  }
+  else
+  {  // extract from a branch from the span
+
+    // https://stackoverflow.com/questions/1596668
+    if (subtree.isMember("left") != subtree.isMember("right"))
+      Log::get().warn("Malformed Merkle subtree, incomplete span.");
+
+    if (subtree.isMember("left"))
+    {
+      Json::Value leftPath = subtree["left"];
+      base64Root = leftPath[leftPath.size() - 1]["hash"].asString();
+    }
+    else
+      Log::get().warn("Subtree is missing both branches!");
+  }
 
   SHA384_HASH root;
   if (Botan::base64_decode(root.data(), base64Root) != Const::SHA384_LEN)
@@ -253,6 +273,7 @@ bool MerkleTree::isLessThan(const LeafPtr& a, const LeafPtr& b)
 MerkleTree::Node::Node()
     : parent_(nullptr), leftChild_(nullptr), rightChild_(nullptr)
 {
+  hash_.fill(0);
 }
 
 
