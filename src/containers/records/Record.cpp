@@ -24,8 +24,13 @@ Record::Record(Botan::RSA_PublicKey* pubKey)
 Record::Record(Botan::RSA_PrivateKey* key)
     : Record(static_cast<Botan::RSA_PublicKey*>(key))
 {
-  if (key->get_n().bits() == Const::RSA_LEN)
-    Log::get().error("Private RSA key is not 1024 bits in length!");
+  if (key->get_n().bits() != Const::RSA_LEN)
+  {
+    Log::get().warn("Tor currently supports only 1024-bit RSA HS keys.");
+    Log::get().error("Provided key is " + std::to_string(key->get_n().bits()) +
+                     " bits long.");
+  }
+
   setKey(key);
 }
 
