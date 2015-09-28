@@ -140,7 +140,7 @@ void TorStream::initCallback(Socks5::Error err,
 
 
 void TorStream::contactCallback(Socks5::Error err,
-                                boost::system::error_code ec,
+                                boost::system::error_code,
                                 Socks5::Reply reply)
 {
   if (err == Socks5::Error::NO_ERROR &&

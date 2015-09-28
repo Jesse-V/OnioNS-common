@@ -403,21 +403,28 @@ void Record::computeValidity(bool* abortSig)
   UInt8Array buffer = computeCentral();
 
   if (*abortSig)
+  {
+    delete[] buffer.first;
     return;
+  }
 
   // updated scrypted_, append scrypted_ to buffer, check for errors
   if (updateAppendScrypt(buffer) < 0)
   {
     Log::get().warn("Error with scrypt call!");
+    delete[] buffer.first;
     return;
   }
 
   if (*abortSig)  // stop if another worker has won
+  {
+    delete[] buffer.first;
     return;
+  }
 
   updateAppendSignature(buffer);  // update signature_, append to buffer
   updateValidity(buffer);         // update valid_ based on entire buffer
-  delete buffer.first;            // cleanup
+  delete[] buffer.first;            // cleanup
 }
 
 
