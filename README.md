@@ -3,7 +3,7 @@
 
 OnioNS is a distributed, privacy-enhanced, metadata-free, and highly usable DNS for Tor hidden services. OnioNS allows hidden service operators to select a meaningful and globally-unique domain name for their service, which users can then reference from the Tor Browser. The system is powered by the Tor network, relies on a distributed database, and provides anonymity to both operators and users. This project aims to address the major usability issue that has been with Tor hidden services since their introduction in 2002.
 
-### Repository Details [![Build Status](https://travis-ci.org/Jesse-V/OnioNS-common.svg?branch=master)](https://travis-ci.org/Jesse-V/OnioNS-common)
+### Repository Details [![Build Status](https://travis-ci.org/Jesse-V/OnioNS-common.svg)](https://travis-ci.org/Jesse-V/OnioNS-common)
 
 This repository provides the common shared library for the other OnioNS packages, -HS, -server, and -client.
 
@@ -11,9 +11,9 @@ This repository provides the common shared library for the other OnioNS packages
 
 #### Linux
 
-**Debian 7 and 8, Ubuntu 14.04 - 15.10, Mint 17 - 17.2, Fedora 21 - 23**
+**Debian, Ubuntu, Mint, and Fedora**
 
-i386, amd64, and armhf architectures are supported, so it should run on 32-bit, 64-bit, and ARM machines. I'm also supporting ARM boards such as the Pi, BBB, Odroid, etc.
+i386, amd64, and armhf architectures are supported. I'm also supporting ARM boards such as the Pi, BBB, Odroid, etc.
 
 #### Windows
 
@@ -35,13 +35,13 @@ I provide builds for Debian Wheezy and Ubuntu in the [Releases section](https://
 
 * **Install from source**
 
-> 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev**
+> 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libbotan1.10-dev libcurl-dev libargtable2-dev libmicrohttpd-dev**
 
->> Fedora: **yum install g++ cmake popt-devel botan-devel asio-devel boost-system**
+>> Fedora: **yum install g++ cmake botan-devel libcurl-devel argtable-devel libmicrohttpd-devel**
 
 > 2. Download and extract the latest release from the [Releases page](https://github.com/Jesse-V/OnioNS-common/releases).
 > 3. **(mkdir build; cd build; cmake ../src; make -j $(grep -c ^processor /proc/cpuinfo); sudo make install)**
 
 If you are actively developing OnioNS, I have actively prepared two scripts, devBuild.sh and checkBuild.sh. Please see them for more information.
 
-You can cleanup your build with **(rm -rf build; cd src/libs/libscrypt; make clean)**
+You can cleanup your build with **(rm -rf build src/libs/libjson-rpc-cpp/build; cd src/libs/libscrypt; make clean)**
