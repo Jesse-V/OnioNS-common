@@ -6,18 +6,21 @@
 # extra analysis, this script can take some time to complete so it's best run
 # infrequently, such as before a release.
 
-# Please install clang-3.6 and cppcheck before running this script.
+# Please install clang, clang-analyzer, and cppcheck before running this script.
+# This script is tailored to Fedora. Other distros may need to do the following:
+  # use clang-3.6 and clang-analyzer-3.6
+  # add "-DCMAKE_CXX_COMPILER=/usr/share/clang/scan-build/c++-analyzer -DCMAKE_C_COMPILER=/usr/share/clang/scan-build/ccc-analyzer" to the "scanbuild-cmake" command below
 
-export CCC_CXX=clang++-3.6
-export CCC_CC=clang-3.6
+export CCC_CXX=clang++
+export CCC_CC=clang
 
 mkdir -p build/
 cd build
-scan-build-3.6 cmake ../src -DCMAKE_CXX_COMPILER=/usr/share/clang/scan-build-3.6/c++-analyzer -DCMAKE_C_COMPILER=/usr/share/clang/scan-build-3.6/ccc-analyzer # -DCMAKE_BUILD_TYPE=Debug
+scan-build cmake ../src # -DCMAKE_BUILD_TYPE=Debug
 
 echo "Compiling with Clang static analysis...  -------------------------------"
 rm -rf /tmp/scan-build-*
-if (scan-build-3.6 -maxloop 16 -enable-checker core -enable-checker cplusplus -disable-checker deadcode -enable-checker security -enable-checker unix make -j $(grep -c ^processor /proc/cpuinfo)) then
+if (scan-build -maxloop 16 -enable-checker core -enable-checker cplusplus -disable-checker deadcode -enable-checker security -enable-checker unix make -j $(grep -c ^processor /proc/cpuinfo)) then
 
   if [ $(ls /tmp/scan-build-* | wc -l 2> /dev/null) -gt 0 ]; then
     echo "Failure: static analysis contains reports."
@@ -27,7 +30,7 @@ if (scan-build-3.6 -maxloop 16 -enable-checker core -enable-checker cplusplus -d
   else
     echo "Additional static analysis...        ----------------------------------------------"
     cd ..
-    find src -type f -follow -print | cppcheck -i "src/assets" -i "src/libs" -i "src/crypto" --enable=all --platform=unix64 --inconclusive --file-list=-
+    find src -type f -follow -print | cppcheck -i "src/assets" -i "src/libs" -i "src/crypto" -i "src/spec/rpc_spec.json" --enable=all --platform=unix64 --inconclusive --file-list=-
 
     echo "Success: compilation and scan-build check successful!"
   fi

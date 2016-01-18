@@ -4,23 +4,24 @@
 # and then builds the project using the Clang 3.6 compiler. This is the main
 # script to use if you are compiling frequently.
 
-# Please install clang-format-3.6 and clang-3.6 before running this script.
+# Please install clang before running this script.
+# This script is tailored to Fedora. Other distros may want to use clang-3.6 and clang-format-3.6
 
 echo "Re-styling code...        ----------------------------------------------"
 
 # make the code-style consistent
 for f in $(find src/ -type f -name "*.c*" | grep -v "libs"); do
-   clang-format-3.6 -style="{BasedOnStyle: chromium, BreakBeforeBraces: Allman, MaxEmptyLinesToKeep: 3}" -i $f
+   clang-format -style="{BasedOnStyle: chromium, BreakBeforeBraces: Allman, MaxEmptyLinesToKeep: 3}" -i $f
 done
 # AlignConsecutiveAssignments: true
 for f in $(find src/ -type f -name "*.h*" | grep -v "libs"); do
-   clang-format-3.6 -style="{BasedOnStyle: chromium, BreakBeforeBraces: Allman, MaxEmptyLinesToKeep: 3}" -i $f
+   clang-format -style="{BasedOnStyle: chromium, BreakBeforeBraces: Allman, MaxEmptyLinesToKeep: 3}" -i $f
 done
 
 echo "Preparing build...        ----------------------------------------------"
 
-export CXX=clang++-3.6
-export CC=clang-3.6
+export CXX=clang++
+export CC=clang
 
 mkdir -p build/
 cd build
@@ -33,4 +34,5 @@ if (make -j $(grep -c ^processor /proc/cpuinfo)) then
 else
   cd ..
   rm -rf build/
+  rm -rf src/libs/libjson-rpc-cpp/build/
 fi
