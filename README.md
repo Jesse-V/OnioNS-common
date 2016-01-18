@@ -35,7 +35,7 @@ I provide builds for Debian Wheezy and Ubuntu in the [Releases section](https://
 
 * **Install from source**
 
-> 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libbotan1.10-dev libcurl-dev libargtable2-dev libmicrohttpd-dev**
+> 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libbotan1.10-dev libcurl4-nss-dev libargtable2-dev libmicrohttpd-dev**
 
 >> Fedora: **yum install g++ cmake botan-devel libcurl-devel argtable-devel libmicrohttpd-devel**
 
