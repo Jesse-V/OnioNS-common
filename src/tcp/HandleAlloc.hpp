@@ -13,7 +13,6 @@ class HandleAlloc : private boost::noncopyable
 {
  public:
   HandleAlloc() : in_use_(false) {}
-
   void* allocate(std::size_t size)
   {
     if (!in_use_ && size < storage_.size)

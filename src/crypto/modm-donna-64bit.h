@@ -22,16 +22,12 @@
 typedef uint64_t bignum256modm_element_t;
 typedef bignum256modm_element_t bignum256modm[5];
 
-static const bignum256modm modm_m = {0x12631a5cf5d3ed,
-                                     0xf9dea2f79cd658,
-                                     0x000000000014de,
-                                     0x00000000000000,
+static const bignum256modm modm_m = {0x12631a5cf5d3ed, 0xf9dea2f79cd658,
+                                     0x000000000014de, 0x00000000000000,
                                      0x00000010000000};
 
-static const bignum256modm modm_mu = {0x9ce5a30a2c131b,
-                                      0x215d086329a7ed,
-                                      0xffffffffeb2106,
-                                      0xffffffffffffff,
+static const bignum256modm modm_mu = {0x9ce5a30a2c131b, 0x215d086329a7ed,
+                                      0xffffffffeb2106, 0xffffffffffffff,
                                       0x00000fffffffff};
 
 static bignum256modm_element_t lt_modm(bignum256modm_element_t a,

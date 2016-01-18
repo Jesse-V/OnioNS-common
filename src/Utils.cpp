@@ -125,7 +125,8 @@ std::string Utils::trimString(const std::string& str)
           std::find_if(s.begin(), s.end(),
                        std::not1(std::ptr_fun<int, int>(std::isspace))));
   s.erase(std::find_if(s.rbegin(), s.rend(),
-                       std::not1(std::ptr_fun<int, int>(std::isspace))).base(),
+                       std::not1(std::ptr_fun<int, int>(std::isspace)))
+              .base(),
           s.end());
   return s;
 }

@@ -12,7 +12,6 @@ class MemAllocator
 {
  public:
   MemAllocator(HandleAlloc& a, Handler h) : allocator_(a), handler_(h) {}
-
   template <typename Arg1>
   void operator()(Arg1 arg1)
   {
