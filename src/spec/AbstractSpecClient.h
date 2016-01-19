@@ -7,10 +7,10 @@
 
 #include <jsonrpccpp/client.h>
 
-class SpecClient : public jsonrpc::Client
+class AbstractSpecClient : public jsonrpc::Client
 {
  public:
-  SpecClient(jsonrpc::IClientConnector& conn,
+  AbstractSpecClient(jsonrpc::IClientConnector& conn,
              jsonrpc::clientVersion_t type = jsonrpc::JSONRPC_CLIENT_V2)
       : jsonrpc::Client(conn, type)
   {

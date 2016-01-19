@@ -23,12 +23,12 @@ endif()
 SET(JSONCPP_CPP libs/jsoncpp/jsoncpp.cpp)
 set_source_files_properties(${JSONCPP_CPP} PROPERTIES COMPILE_FLAGS -w)
 
-# define sources for the JsonCpp target
+# define our JsonCpp target
 add_library(onions-jsoncpp SHARED
   ${JSONCPP_CPP}
 )
 
-# build our JSON-RPC library
+# define our JSON-RPC library
 add_custom_target(onions-json-rpc # todo: there's probably a better way
   COMMAND # do an out-of-source build
     mkdir -p build &&
@@ -39,19 +39,97 @@ add_custom_target(onions-json-rpc # todo: there's probably a better way
   VERBATIM
 )
 
+# define libscrypt library
+add_custom_target(onions-libscrypt
+  COMMAND make
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/
+)
+
+# define the CyoEncode 
+add_library(onions-cyoencode SHARED
+  libs/CyoEncode/CyoDecode.c
+  libs/CyoEncode/CyoEncode.c
+)
+
 # define sources for our main target
 add_library(onions-common SHARED
-  main.cpp
+  Common.cpp
+  Config.cpp
+  Log.cpp
+  Utils.cpp
+
+  containers/Cache.cpp
+  containers/MerkleTree.cpp
+  containers/records/Record.cpp
+  containers/records/CreateR.cpp
+  
+  spec/AbstractSpecClient.h
+  spec/AbstractSpecServer.h
+  
+  crypto/ed25519.cpp
 )
 
 # define our chain of dependencies
 add_dependencies(onions-json-rpc onions-jsoncpp)
-add_dependencies(onions-common onions-json-rpc)
+add_dependencies(onions-common onions-json-rpc onions-cyoencode onions-libscrypt)
 
-# set versions so that sonames are properly set
+# set library versions so that sonames are properly set
 set_target_properties(onions-common     PROPERTIES VERSION 0)
 set_target_properties(onions-jsoncpp    PROPERTIES VERSION 1.6.5)
+set_target_properties(onions-libscrypt  PROPERTIES VERSION 1.20)
+set_target_properties(onions-cyoencode  PROPERTIES VERSION 1.1.1)
 
-# /etc/ld.so.conf.d/onions-common.conf, # https://fedoraproject.org/wiki/Packaging:Guidelines#Alternatives_to_Rpath
+# set the list of directories that contain headers
+include_directories(libs libs/jsoncpp /usr/include/botan-1.10)
 
+# set the INSTALL_PREFIX pre-processor directive, distinguishes /usr/bin/ from /usr/local/bin/
+add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\))
+
+# define linking
+SET(LIBSCRYPT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/libscrypt.so.0)
+target_link_libraries(onions-common pthread botan-1.10)
+
+# define library path for Linux's load linker
+# https://fedoraproject.org/wiki/Packaging:Guidelines#Alternatives_to_Rpath
+file(WRITE onions-common.conf ${CMAKE_INSTALL_PREFIX}/onions-common)
+
+# install libraries
+install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
+install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION lib/onions-common/)
+install(TARGETS onions-cyoencode  LIBRARY  DESTINATION lib/onions-common/)
+install(FILES   ${LIBSCRYPT_LIB}           DESTINATION lib/onions-common/)
+
+# install load linker file
+install(FILES   onions-common.conf           DESTINATION /etc/ld.so.conf.d/)
+
+# install headers
+set(HEADERS "include/onions-common/")
+install(FILES Common.hpp                      DESTINATION ${HEADERS})
+install(FILES Config.hpp                      DESTINATION ${HEADERS})
+install(FILES Constants.hpp                   DESTINATION ${HEADERS})
+install(FILES Log.hpp                         DESTINATION ${HEADERS})
+install(FILES Utils.hpp                       DESTINATION ${HEADERS})
+install(FILES containers/MerkleTree.hpp       DESTINATION ${HEADERS}/containers)
+install(FILES containers/records/Record.hpp   DESTINATION ${HEADERS}/containers/records)
+install(FILES containers/records/CreateR.hpp  DESTINATION ${HEADERS}/containers/records)
+install(FILES spec/AbstractSpecClient.h       DESTINATION ${HEADERS}/spec)
+install(FILES spec/AbstractSpecServer.h       DESTINATION ${HEADERS}/spec)
+install(FILES crypto/ed25519.h                DESTINATION ${HEADERS}/crypto)
+
+# install resources
+set(ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+install(FILES ${ASSETS}/mirrors.json      DESTINATION share/onions-common/)
+install(FILES ${ASSETS}/quorum.json       DESTINATION share/onions-common/)
+
+# setup uninstall target (use libjson-rpc-cpp's uninstall method)
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/cmake/cmake_uninstall.cmake.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+	IMMEDIATE @ONLY
+)
+
+# define the uninstall target
+add_custom_target(uninstall
+	COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
+)
 
