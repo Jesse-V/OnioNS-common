@@ -29,11 +29,11 @@ add_library(onions-jsoncpp SHARED
 )
 
 # define our JSON-RPC library
-add_custom_target(onions-json-rpc # todo: there's probably a better way
+add_custom_target(onions-json-rpc # I could make this a seperate package, but this works
   COMMAND # do an out-of-source build
     mkdir -p build &&
     cd build &&
-    cmake -DJSONCPP_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/libs/jsoncpp -DJSONCPP_LIBRARY=${CMAKE_CURRENT_BINARY_DIR}/libonions-jsoncpp.so -DCOMPILE_TESTS=NO -DCOMPILE_EXAMPLES=NO -DUNIX_DOMAIN_SOCKET_SERVER=NO -DUNIX_DOMAIN_SOCKET_CLIENT=NO -DCATCH_INCLUDE_DIR=/dev/null .. &&
+    cmake -DJSONCPP_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/libs/jsoncpp -DJSONCPP_LIBRARY=${CMAKE_CURRENT_BINARY_DIR}/libonions-jsoncpp.so -DCOMPILE_TESTS=NO -DCOMPILE_EXAMPLES=NO -DUNIX_DOMAIN_SOCKET_SERVER=NO -DUNIX_DOMAIN_SOCKET_CLIENT=NO -DCATCH_INCLUDE_DIR=/tmp .. &&
     make
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/
   VERBATIM
@@ -63,8 +63,8 @@ add_library(onions-common SHARED
   containers/records/Record.cpp
   containers/records/CreateR.cpp
   
-  spec/AbstractSpecClient.h
-  spec/AbstractSpecServer.h
+  #spec/AbstractSpecClient.h
+  #spec/AbstractSpecServer.h
   
   crypto/ed25519.cpp
 )
@@ -91,16 +91,29 @@ target_link_libraries(onions-common pthread botan-1.10)
 
 # define library path for Linux's load linker
 # https://fedoraproject.org/wiki/Packaging:Guidelines#Alternatives_to_Rpath
-file(WRITE onions-common.conf ${CMAKE_INSTALL_PREFIX}/onions-common)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf ${CMAKE_INSTALL_PREFIX}/onions-common)
 
 # install libraries
 install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-cyoencode  LIBRARY  DESTINATION lib/onions-common/)
 install(FILES   ${LIBSCRYPT_LIB}           DESTINATION lib/onions-common/)
+SET(JSONRPC_LIB "libs/libjson-rpc-cpp/build/lib/")
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so        DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so.0      DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so.0.6.0  DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-common.so        DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-common.so.0      DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-common.so.0.6.0  DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-server.so        DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-server.so.0      DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-server.so.0.6.0  DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-stub.so          DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-stub.so.0        DESTINATION lib/onions-common/)
+install(FILES ${JSONRPC_LIB}/libjsonrpccpp-stub.so.0.6.0    DESTINATION lib/onions-common/)
 
 # install load linker file
-install(FILES   onions-common.conf           DESTINATION /etc/ld.so.conf.d/)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf DESTINATION /etc/ld.so.conf.d/)
 
 # install headers
 set(HEADERS "include/onions-common/")
@@ -115,6 +128,23 @@ install(FILES containers/records/CreateR.hpp  DESTINATION ${HEADERS}/containers/
 install(FILES spec/AbstractSpecClient.h       DESTINATION ${HEADERS}/spec)
 install(FILES spec/AbstractSpecServer.h       DESTINATION ${HEADERS}/spec)
 install(FILES crypto/ed25519.h                DESTINATION ${HEADERS}/crypto)
+
+# install headers for our dependencies
+install(FILES libs/jsoncpp/json/json.h        DESTINATION ${HEADERS}/json/)
+install(FILES spec/AbstractSpecClient.h       DESTINATION ${HEADERS}/spec/)
+install(FILES spec/AbstractSpecServer.h       DESTINATION ${HEADERS}/spec/)
+
+# install headers for json-rpc-cpp dependency
+set(JSONRPC_BASE "libs/libjson-rpc-cpp/src/jsonrpccpp/")
+install(FILES ${JSONRPC_BASE}/client.h                            DESTINATION ${HEADERS}/jsonrpccpp/)
+install(FILES ${JSONRPC_BASE}/common/exception.h                  DESTINATION ${HEADERS}/jsonrpccpp/common/)
+install(FILES ${JSONRPC_BASE}/common/errors.h                     DESTINATION ${HEADERS}/jsonrpccpp/common/)
+install(FILES ${JSONRPC_BASE}/client/client.h                     DESTINATION ${HEADERS}/jsonrpccpp/client)
+install(FILES ${JSONRPC_BASE}/client/iclientconnector.h           DESTINATION ${HEADERS}/jsonrpccpp/client)
+install(FILES ${JSONRPC_BASE}/client/batchcall.h                  DESTINATION ${HEADERS}/jsonrpccpp/client)
+install(FILES ${JSONRPC_BASE}/client/batchresponse.h              DESTINATION ${HEADERS}/jsonrpccpp/client)
+install(FILES ${JSONRPC_BASE}/client/connectors/socks5client.h    DESTINATION ${HEADERS}/jsonrpccpp/client/connectors)
+install(FILES libs/libjson-rpc-cpp/build/gen/jsonrpccpp/common/jsonparser.h DESTINATION ${HEADERS}/jsonrpccpp/common/)
 
 # install resources
 set(ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
