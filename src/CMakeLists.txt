@@ -39,6 +39,15 @@ add_custom_target(onions-json-rpc # I could make this a seperate package, but th
   VERBATIM
 )
 
+# create a target that regenerates our specification hook classes for JSON-RPC
+add_custom_target(onions-spec
+  COMMAND
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/rpc_spec.json --cpp-server=AbstractSpecServer --cpp-client=AbstractSpecClient &&
+    mv abstractspecserver.h AbstractSpecServer.h &&
+    mv abstractspecclient.h AbstractSpecClient.h
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 # define libscrypt library
 add_custom_target(onions-libscrypt
   COMMAND make
@@ -71,7 +80,8 @@ add_library(onions-common SHARED
 
 # define our chain of dependencies
 add_dependencies(onions-json-rpc onions-jsoncpp)
-add_dependencies(onions-common onions-json-rpc onions-cyoencode onions-libscrypt)
+add_dependencies(onions-spec onions-json-rpc)
+add_dependencies(onions-common onions-json-rpc onions-spec onions-cyoencode onions-libscrypt)
 
 # set library versions so that sonames are properly set
 set_target_properties(onions-common     PROPERTIES VERSION 0)
@@ -117,42 +127,40 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf DESTINATION /etc/ld
 
 # install headers
 set(HEADERS "include/onions-common/")
-install(FILES Common.hpp                      DESTINATION ${HEADERS})
-install(FILES Config.hpp                      DESTINATION ${HEADERS})
-install(FILES Constants.hpp                   DESTINATION ${HEADERS})
-install(FILES Log.hpp                         DESTINATION ${HEADERS})
-install(FILES Utils.hpp                       DESTINATION ${HEADERS})
-install(FILES containers/MerkleTree.hpp       DESTINATION ${HEADERS}/containers)
-install(FILES containers/records/Record.hpp   DESTINATION ${HEADERS}/containers/records)
-install(FILES containers/records/CreateR.hpp  DESTINATION ${HEADERS}/containers/records)
-install(FILES spec/AbstractSpecClient.h       DESTINATION ${HEADERS}/spec)
-install(FILES spec/AbstractSpecServer.h       DESTINATION ${HEADERS}/spec)
-install(FILES crypto/ed25519.h                DESTINATION ${HEADERS}/crypto)
+install(FILES Common.hpp                                        DESTINATION ${HEADERS})
+install(FILES Config.hpp                                        DESTINATION ${HEADERS})
+install(FILES Constants.hpp                                     DESTINATION ${HEADERS})
+install(FILES Log.hpp                                           DESTINATION ${HEADERS})
+install(FILES Utils.hpp                                         DESTINATION ${HEADERS})
+install(FILES containers/MerkleTree.hpp                         DESTINATION ${HEADERS}/containers)
+install(FILES containers/records/Record.hpp                     DESTINATION ${HEADERS}/containers/records)
+install(FILES containers/records/CreateR.hpp                    DESTINATION ${HEADERS}/containers/records)
+install(FILES crypto/ed25519.h                                  DESTINATION ${HEADERS}/crypto)
 
 # install headers for our dependencies
-install(FILES libs/jsoncpp/json/json.h        DESTINATION ${HEADERS}/json/)
-install(FILES spec/AbstractSpecClient.h       DESTINATION ${HEADERS}/spec/)
-install(FILES spec/AbstractSpecServer.h       DESTINATION ${HEADERS}/spec/)
+install(FILES libs/jsoncpp/json/json.h                          DESTINATION ${HEADERS}/json/)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/AbstractSpecClient.h  DESTINATION ${HEADERS}/spec)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/AbstractSpecServer.h  DESTINATION ${HEADERS}/spec)
 
 # install headers for json-rpc-cpp dependency
 set(JSONRPC_BASE "libs/libjson-rpc-cpp/src/jsonrpccpp/")
-install(FILES ${JSONRPC_BASE}/client.h                            DESTINATION ${HEADERS}/jsonrpccpp/)
-install(FILES ${JSONRPC_BASE}/server.h                            DESTINATION ${HEADERS}/jsonrpccpp/)
-install(FILES ${JSONRPC_BASE}/common/exception.h                  DESTINATION ${HEADERS}/jsonrpccpp/common/)
-install(FILES ${JSONRPC_BASE}/common/errors.h                     DESTINATION ${HEADERS}/jsonrpccpp/common/)
-install(FILES ${JSONRPC_BASE}/common/procedure.h                  DESTINATION ${HEADERS}/jsonrpccpp/common/)
-install(FILES ${JSONRPC_BASE}/common/specification.h              DESTINATION ${HEADERS}/jsonrpccpp/common/)
+install(FILES ${JSONRPC_BASE}/client.h                              DESTINATION ${HEADERS}/jsonrpccpp/)
+install(FILES ${JSONRPC_BASE}/server.h                              DESTINATION ${HEADERS}/jsonrpccpp/)
+install(FILES ${JSONRPC_BASE}/common/exception.h                    DESTINATION ${HEADERS}/jsonrpccpp/common/)
+install(FILES ${JSONRPC_BASE}/common/errors.h                       DESTINATION ${HEADERS}/jsonrpccpp/common/)
+install(FILES ${JSONRPC_BASE}/common/procedure.h                    DESTINATION ${HEADERS}/jsonrpccpp/common/)
+install(FILES ${JSONRPC_BASE}/common/specification.h                DESTINATION ${HEADERS}/jsonrpccpp/common/)
 install(FILES libs/libjson-rpc-cpp/build/gen/jsonrpccpp/common/jsonparser.h DESTINATION ${HEADERS}/jsonrpccpp/common/)
-install(FILES ${JSONRPC_BASE}/client/client.h                     DESTINATION ${HEADERS}/jsonrpccpp/client)
-install(FILES ${JSONRPC_BASE}/client/iclientconnector.h           DESTINATION ${HEADERS}/jsonrpccpp/client)
-install(FILES ${JSONRPC_BASE}/client/batchcall.h                  DESTINATION ${HEADERS}/jsonrpccpp/client)
-install(FILES ${JSONRPC_BASE}/client/batchresponse.h              DESTINATION ${HEADERS}/jsonrpccpp/client)
-install(FILES ${JSONRPC_BASE}/client/connectors/socks5client.h    DESTINATION ${HEADERS}/jsonrpccpp/client/connectors)
-install(FILES ${JSONRPC_BASE}/server/abstractserver.h             DESTINATION ${HEADERS}/jsonrpccpp/server)
-install(FILES ${JSONRPC_BASE}/server/abstractserverconnector.h    DESTINATION ${HEADERS}/jsonrpccpp/server)
-install(FILES ${JSONRPC_BASE}/server/iclientconnectionhandler.h   DESTINATION ${HEADERS}/jsonrpccpp/server)
+install(FILES ${JSONRPC_BASE}/client/client.h                       DESTINATION ${HEADERS}/jsonrpccpp/client)
+install(FILES ${JSONRPC_BASE}/client/iclientconnector.h             DESTINATION ${HEADERS}/jsonrpccpp/client)
+install(FILES ${JSONRPC_BASE}/client/batchcall.h                    DESTINATION ${HEADERS}/jsonrpccpp/client)
+install(FILES ${JSONRPC_BASE}/client/batchresponse.h                DESTINATION ${HEADERS}/jsonrpccpp/client)
+install(FILES ${JSONRPC_BASE}/client/connectors/socks5client.h      DESTINATION ${HEADERS}/jsonrpccpp/client/connectors)
+install(FILES ${JSONRPC_BASE}/server/abstractserver.h               DESTINATION ${HEADERS}/jsonrpccpp/server)
+install(FILES ${JSONRPC_BASE}/server/abstractserverconnector.h      DESTINATION ${HEADERS}/jsonrpccpp/server)
+install(FILES ${JSONRPC_BASE}/server/iclientconnectionhandler.h     DESTINATION ${HEADERS}/jsonrpccpp/server)
 install(FILES ${JSONRPC_BASE}/server/iprocedureinvokationhandler.h  DESTINATION ${HEADERS}/jsonrpccpp/server)
-install(FILES ${JSONRPC_BASE}/server/requesthandlerfactory.h  DESTINATION ${HEADERS}/jsonrpccpp/server)
+install(FILES ${JSONRPC_BASE}/server/requesthandlerfactory.h        DESTINATION ${HEADERS}/jsonrpccpp/server)
 install(FILES ${JSONRPC_BASE}/server/connectors/httpserver.h        DESTINATION ${HEADERS}/jsonrpccpp/server/connectors)
 
 # install resources
