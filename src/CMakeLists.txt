@@ -11,7 +11,7 @@ set(PATCH_VERSION 0)
 set(SO_VERSION    0)
 
 # define compiler options for Clang and GCC/G++
-SET(COMMON_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM -fstack-protector -D_FORTIFY_SOURCE=1")
+SET(COMMON_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM -fstack-protector -D_FORTIFY_SOURCE=1")
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -Wno-c++98-compat-pedantic -pedantic -Weverything -Wno-exit-time-destructors -Wno-weak-vtables -Wno-padded -Wno-deprecated -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-missing-noreturn -Wno-sign-conversion -Wno-shadow")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -43,8 +43,8 @@ add_custom_target(onions-json-rpc # I could make this a seperate package, but th
 add_custom_target(onions-spec
   COMMAND
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/rpc_spec.json --cpp-server=AbstractSpecServer --cpp-client=AbstractSpecClient &&
-    mv abstractspecserver.h AbstractSpecServer.h &&
-    mv abstractspecclient.h AbstractSpecClient.h
+    mv -f abstractspecserver.h AbstractSpecServer.h &&
+    mv -f abstractspecclient.h AbstractSpecClient.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 

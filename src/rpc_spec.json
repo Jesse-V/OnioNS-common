@@ -1,24 +1,30 @@
 [
-    {
-        "name": "getData",
-        "params": {
-            "arg1": "value1",
-            "arg2": 7
-        },
-        "returns": 0
-    },
-    {
-        "name": "basicGet",
-        "returns": ""
-    },
-    {
-        "name": "noArgNotification"
-    },
-    {
-        "name": "tellServer",
-        "params": {
-            "arg3": [],
-            "arg4": true
-        }
+  {
+    "name": "getSpecVersion",
+    "returns": ""
+  },
+  {
+    "name": "putRecord",
+    "params": {
+      "record": {}
     }
+  },
+  {
+    "name": "getRecord",
+    "params": {
+      "domain": ""
+    },
+    "returns": {}
+  },
+  {
+    "name": "getSubtree",
+    "params": {
+      "domain": ""
+    },
+    "returns": ""
+  },
+  {
+    "name": "subscribe",
+    "returns": {}
+  }
 ]
