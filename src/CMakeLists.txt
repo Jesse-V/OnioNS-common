@@ -2,9 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(onions-common)
 
-# common: major.minor.patch : only current and last release are supported
+# common: major.minor.patch : current and last release are supported
 # protocol: major.minor : major-1 and all .minor are supported (3.9 works with 2.0, but not 1.9)
-  # major increments after 10 minor releases
 set(MAJOR_VERSION 0)
 set(MINOR_VERSION 7)
 set(PATCH_VERSION 0)
@@ -72,9 +71,6 @@ add_library(onions-common SHARED
   containers/records/Record.cpp
   containers/records/CreateR.cpp
   
-  #spec/AbstractSpecClient.h
-  #spec/AbstractSpecServer.h
-  
   crypto/ed25519.cpp
 )
 
@@ -118,9 +114,6 @@ install(FILES ${JSONRPC_LIB}/libjsonrpccpp-common.so.0.6.0  DESTINATION lib/onio
 install(FILES ${JSONRPC_LIB}/libjsonrpccpp-server.so        DESTINATION lib/onions-common/)
 install(FILES ${JSONRPC_LIB}/libjsonrpccpp-server.so.0      DESTINATION lib/onions-common/)
 install(FILES ${JSONRPC_LIB}/libjsonrpccpp-server.so.0.6.0  DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-stub.so          DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-stub.so.0        DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-stub.so.0.6.0    DESTINATION lib/onions-common/)
 
 # install load linker file
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf DESTINATION /etc/ld.so.conf.d/)

@@ -9,46 +9,6 @@
 #include <sstream>
 
 
-bool Utils::parse(const poptContext& pc)
-{  // http://privatemisc.blogspot.com/2012/12/popt-basic-example.html
-  poptSetOtherOptionHelp(pc, "[ARG...]");
-
-  // process options and handle each val returned
-  int val;
-  while ((val = poptGetNextOpt(pc)) >= 0)
-  {
-  }
-
-  // poptGetNextOpt returns -1 when the final argument has been parsed
-  if (val != -1)
-  {
-    poptPrintUsage(pc, stderr, 0);
-
-    // handle error
-    switch (val)
-    {
-      case POPT_ERROR_NOARG:
-        printf("Argument expected but missing for an option.\n");
-        return false;
-      case POPT_ERROR_BADOPT:
-        printf("Failed to parse argument.\n");
-        return false;
-      case POPT_ERROR_BADNUMBER:
-      case POPT_ERROR_OVERFLOW:
-        printf("Option could not be converted to number\n");
-        return false;
-      default:
-        printf("Unknown error in option processing\n");
-        return false;
-    }
-  }
-
-  poptFreeContext(pc);
-  return true;
-}
-
-
-
 // https://stackoverflow.com/questions/6855115/byte-array-to-int-c
 uint32_t Utils::arrayToUInt32(const uint8_t* byteArray, int32_t offset)
 {
