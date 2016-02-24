@@ -24,7 +24,10 @@
     "returns": ""
   },
   {
-    "name": "subscribe",
+    "name": "getRecordsSince",
+    "params": {
+      "time": 0
+    },
     "returns": {}
   }
 ]
