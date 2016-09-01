@@ -1,1 +1,8 @@
-1.6.5
+1.7.3
+
+How to update:
+  Pull the latest 1.x release from https://github.com/open-source-parsers/jsoncpp
+  Run "python amalgamate.py" in the base of the code directory.
+  Copy the files in dist/ to this folder.
+  Update the version number.
+  
