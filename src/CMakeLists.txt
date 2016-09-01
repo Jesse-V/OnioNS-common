@@ -94,16 +94,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf ${CMAKE_INSTALL_PREFIX
 install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-cyoencode  LIBRARY  DESTINATION lib/onions-common/)
-SET(JSONRPC_LIB "libs/libjson-rpc-cpp/build/lib")
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so        DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so.0      DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so.0.6.0  DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-common.so        DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-common.so.0      DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-common.so.0.6.0  DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-server.so        DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-server.so.0      DESTINATION lib/onions-common/)
-install(FILES ${JSONRPC_LIB}/libjsonrpccpp-server.so.0.6.0  DESTINATION lib/onions-common/)
+install(DIRECTORY libs/libjson-rpc-cpp/build/lib DESTINATION lib/onions-common/)
 
 # install load linker file
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf DESTINATION /etc/ld.so.conf.d/)

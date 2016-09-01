@@ -37,7 +37,7 @@ I provide builds for Debian in the [Releases section](https://github.com/Jesse-V
 
 > 2. Install the dependencies.
 
->> Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libbotan1.10-dev libcurl4-openssl-dev libargtable2-dev libmicrohttpd-dev**
+>> Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libbotan1.10-dev libcurl4-nss-dev libargtable2-dev libmicrohttpd-dev**
 
 >> Fedora: **yum install g++ cmake botan-devel libcurl-devel argtable-devel libmicrohttpd-devel**
 
