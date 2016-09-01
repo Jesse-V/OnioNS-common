@@ -59,7 +59,7 @@ typedef struct uint128_t
 #if defined(__SIZEOF_INT128__)
 #define HAVE_NATIVE_UINT128
 typedef unsigned __int128 uint128_t;
-#elif(COMPILER_GCC >= 40400)
+#elif (COMPILER_GCC >= 40400)
 #define HAVE_NATIVE_UINT128
 typedef unsigned uint128_t __attribute__((mode(TI)));
 #elif defined(CPU_X86_64)

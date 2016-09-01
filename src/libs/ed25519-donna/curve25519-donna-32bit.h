@@ -626,8 +626,7 @@ static void curve25519_square_times(bignum25519 out,
 /* Take a little-endian, 32-byte number and expand it into polynomial form */
 static void curve25519_expand(bignum25519 out, const unsigned char in[32])
 {
-  static const union
-  {
+  static const union {
     uint8_t b[2];
     uint16_t s;
   } endian_check = {{1, 0}};

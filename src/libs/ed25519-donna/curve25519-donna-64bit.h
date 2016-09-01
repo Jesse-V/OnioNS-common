@@ -402,8 +402,7 @@ DONNA_INLINE static void curve25519_square(bignum25519 out,
 DONNA_INLINE static void curve25519_expand(bignum25519 out,
                                            const unsigned char* in)
 {
-  static const union
-  {
+  static const union {
     uint8_t b[2];
     uint16_t s;
   } endian_check = {{1, 0}};

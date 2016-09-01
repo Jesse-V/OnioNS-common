@@ -361,10 +361,10 @@ static void ge25519_scalarmult_base_choose_niels(ge25519_niels* t,
 
 
 /* computes [s]basepoint */
-static void ge25519_scalarmult_base_niels(
-    ge25519* r,
-    const uint8_t basepoint_table[256][96],
-    const bignum256modm s)
+static void ge25519_scalarmult_base_niels(ge25519* r,
+                                          const uint8_t basepoint_table[256]
+                                                                       [96],
+                                          const bignum256modm s)
 {
   signed char b[64];
   uint32_t i;
