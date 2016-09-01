@@ -46,7 +46,7 @@ add_custom_target(onions-spec
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-# define the CyoEncode
+# define the CyoEncode library for base32 encoding
 add_library(onions-cyoencode SHARED
   libs/CyoEncode/CyoDecode.c
   libs/CyoEncode/CyoEncode.c
@@ -73,8 +73,8 @@ add_dependencies(onions-spec onions-json-rpc)
 add_dependencies(onions-common onions-json-rpc onions-spec onions-cyoencode)
 
 # set library versions so that sonames are properly set
-set_target_properties(onions-common     PROPERTIES VERSION 0)
-set_target_properties(onions-jsoncpp    PROPERTIES VERSION 1.6.5)
+set_target_properties(onions-common     PROPERTIES VERSION ${MAJOR_VERSION}.${MINOR_VERSION})
+set_target_properties(onions-jsoncpp    PROPERTIES VERSION 1.7.3)
 set_target_properties(onions-cyoencode  PROPERTIES VERSION 1.1.1)
 
 # set the list of directories that contain headers
