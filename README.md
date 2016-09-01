@@ -1,47 +1,52 @@
 #OnioNS - the Onion Name System
-### Tor-Powered Distributed DNS for Tor Hidden Services
+### A New Privacy-Enhanced DNS for Tor Hidden/Onion Services
 
-OnioNS is a distributed, privacy-enhanced, metadata-free, and highly usable DNS for Tor hidden services. OnioNS allows hidden service operators to select a meaningful and globally-unique domain name for their service, which users can then reference from the Tor Browser. The system is powered by the Tor network, relies on a distributed database, and provides anonymity to both operators and users. This project aims to address the major usability issue that has been with Tor hidden services since their introduction in 2002.
+OnioNS is a privacy-enhanced, metadata-free, and highly-usable DNS for Tor onion services. Administrators can use the Onion Name System to anonymously register a meaningful and globally-unique domain name for their site. Users can then load the site just by typing "example.tor" into the Tor Browser. OnioNS is backwards-compatible with traditional .onion addresses, does not require any modifications to the Tor binary or network, and there are no central authorities in charge of the domain names. This project was specifically engineered to solve the usability problem with onion services.
+
+This is the software implementation of the system described in "The Onion Name System: Tor-Powered Decentralized DNS for Tor Onion Services", which will be published in the 2017.1 issue of the Proceedings on Privacy Enhancing Technologies (PoPETS). It will also be demoed in July 2017 at the 17th PETS Symposium in Minneapolis.
 
 ### Repository Details [![Build Status](https://travis-ci.org/Jesse-V/OnioNS-common.svg)](https://travis-ci.org/Jesse-V/OnioNS-common)
 
-This repository provides the common shared library for the other OnioNS packages, -HS, -server, and -client.
+This repository provides the common shared library for the other OnioNS packages. It is a required dependency for the HS, server, and client components.
 
 ### Supported Systems
 
 #### Linux
 
-**Debian, Ubuntu, Mint, and Fedora**
+**Debian, *buntu, Mint, and Fedora**
 
-i386, amd64, and armhf architectures are supported. I'm also supporting ARM boards such as the Pi, BBB, Odroid, etc.
+i386, amd64, and armhf architectures are supported. The software is lightweight and should run just fine on the Raspberry Pi or the BeagleBone Black. I develop using amd64 Debian Testing.
 
-#### Windows
+#### Windows, OS-X, and *BSD
 
-Not currently supported. I have long-term plans of porting this repository and OnioNS-client to Windows, but no intentions to port the other packages to Windows.
-
-#### OS-X and *BSD
-
-Not currently supported, support planned in the far future. I am willing to provide upstream support to anyone who wishes to port the software over there. I have not attempted to compile this code on any BSD system. My current primary focus is developing the Linux edition.
+Not currently supported. However, I will happily welcome ports of the software to OS-X and BSD and will provide upstream support to them. I will also welcome a Windows port of OnioNS-client and OnioNS-common. Talk to me if you are interested in helping out.
 
 ### Installation
 
-* **Install from PPA**
+* **Ubuntu/Mint? Install from PPA**
 
 The tor-onions-common package is a dependency for the other packages, so there is no need to install it manually.
 
-* **Install from .deb file**
+* **Debian? Install from .deb file**
 
-I provide builds for Debian Wheezy and Ubuntu in the [Releases section](https://github.com/Jesse-V/OnioNS-common/releases) for amd64, which probably applies to you. For other architectures, you may download from [my PPA](https://launchpad.net/~jvictors/+archive/tor-dev/+packages).
+I provide builds for Debian in the [Releases section](https://github.com/Jesse-V/OnioNS-common/releases) for amd64, which probably applies to you. For other architectures, you may download from [my PPA](https://launchpad.net/~jvictors/+archive/tor-dev/+packages).
 
 * **Install from source**
 
-> 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libbotan1.10-dev libcurl4-nss-dev libargtable2-dev libmicrohttpd-dev**
+> 1. Download and extract the latest release from the [Releases page](https://github.com/Jesse-V/OnioNS-common/releases).
+
+> 2. Install the dependencies.
+
+>> Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libbotan1.10-dev libcurl4-openssl-dev libargtable2-dev libmicrohttpd-dev**
 
 >> Fedora: **yum install g++ cmake botan-devel libcurl-devel argtable-devel libmicrohttpd-devel**
 
-> 2. Download and extract the latest release from the [Releases page](https://github.com/Jesse-V/OnioNS-common/releases).
-> 3. **(mkdir build; cd build; cmake ../src; make -j $(grep -c ^processor /proc/cpuinfo); sudo make install)**
+> 3. Compile and install the code.
 
-If you are actively developing OnioNS, I have actively prepared two scripts, devBuild.sh and checkBuild.sh. Please see them for more information.
+>> **./configure; make -j 2; sudo make install**
 
-You can cleanup your build with **(rm -rf build src/libs/libjson-rpc-cpp/build; cd src/libs/libscrypt; make clean)**
+The configure script is a simple shell script and is not generated by Automake. You can cleanup your build with **(rm -rf build src/libs/libjson-rpc-cpp/build; cd src/libs/libscrypt; make clean)**
+
+### Contributing
+
+Please file a Github issue ticket to report a bug or request a feature. Developers should use Clang 3.8 as it will compile faster and provide cleaner error messages. Feel check out the devBuild.sh and scanBuild.sh scripts as they can helpful to you.

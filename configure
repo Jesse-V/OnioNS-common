@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# update libjson-rpc-cpp by applying my patches
+cp -f src/libjson-rpc-cpp-patch/src/jsonrpccpp/CMakeLists.txt                     src/libs/libjson-rpc-cpp/src/jsonrpccpp
+cp    src/libjson-rpc-cpp-patch/src/jsonrpccpp/client/connectors/socks5client.cpp src/libs/libjson-rpc-cpp/src/jsonrpccpp/client/connectors
+cp    src/libjson-rpc-cpp-patch/src/jsonrpccpp/client/connectors/socks5client.h   src/libs/libjson-rpc-cpp/src/jsonrpccpp/client/connectors
+
+# set up build
+mkdir -p build
+cd build
+cmake ../src
