@@ -2,15 +2,14 @@ cmake_minimum_required(VERSION 2.8)
 
 project(onions-common)
 
-# common: major.minor.patch : current and last release are supported
-# protocol: major.minor : major-1 and all .minor are supported (3.9 works with 2.0, but not 1.9)
-set(MAJOR_VERSION 0)
-set(MINOR_VERSION 7)
+# common: major.minor.patch
+set(MAJOR_VERSION 1)
+set(MINOR_VERSION 1)
 set(PATCH_VERSION 0)
 set(SO_VERSION    0)
 
 # define compiler options for Clang and GCC/G++
-SET(COMMON_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM -fstack-protector -D_FORTIFY_SOURCE=1")
+SET(COMMON_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g -std=c++11 -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM -fstack-protector -D_FORTIFY_SOURCE=1")
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -Wno-c++98-compat-pedantic -pedantic -Weverything -Wno-exit-time-destructors -Wno-weak-vtables -Wno-padded -Wno-deprecated -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-missing-noreturn -Wno-sign-conversion -Wno-shadow")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -28,11 +27,11 @@ add_library(onions-jsoncpp SHARED
 )
 
 # define our JSON-RPC library
-add_custom_target(onions-json-rpc # I could make this a seperate package, but this works
+add_custom_target(onions-json-rpc # I could make this a separate package, but this works
   COMMAND # do an out-of-source build
     mkdir -p build &&
     cd build &&
-    cmake -DJSONCPP_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/libs/jsoncpp -DJSONCPP_LIBRARY=${CMAKE_CURRENT_BINARY_DIR}/libonions-jsoncpp.so -DCOMPILE_TESTS=NO -DCOMPILE_EXAMPLES=NO -DUNIX_DOMAIN_SOCKET_SERVER=NO -DUNIX_DOMAIN_SOCKET_CLIENT=NO -DCATCH_INCLUDE_DIR=/tmp .. &&
+    cmake -DJSONCPP_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/libs/jsoncpp -DJSONCPP_LIBRARY=${CMAKE_CURRENT_BINARY_DIR}/libonions-jsoncpp.so -DCOMPILE_TESTS=NO -DCOMPILE_EXAMPLES=NO -DUNIX_DOMAIN_SOCKET_SERVER=NO -DUNIX_DOMAIN_SOCKET_CLIENT=NO &&
     make
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/
   VERBATIM
@@ -41,19 +40,13 @@ add_custom_target(onions-json-rpc # I could make this a seperate package, but th
 # create a target that regenerates our specification hook classes for JSON-RPC
 add_custom_target(onions-spec
   COMMAND
-    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/rpc_spec.json --cpp-server=AbstractSpecServer --cpp-client=AbstractSpecClient &&
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/rpc_spec.json --cpp-server=AbstractSpecServer --cpp-client=SpecClient &&
     mv -f abstractspecserver.h AbstractSpecServer.h &&
-    mv -f abstractspecclient.h AbstractSpecClient.h
+    mv -f specclient.h SpecClient.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-# define libscrypt library
-add_custom_target(onions-libscrypt
-  COMMAND make
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/
-)
-
-# define the CyoEncode 
+# define the CyoEncode
 add_library(onions-cyoencode SHARED
   libs/CyoEncode/CyoDecode.c
   libs/CyoEncode/CyoEncode.c
@@ -70,19 +63,18 @@ add_library(onions-common SHARED
   containers/MerkleTree.cpp
   containers/records/Record.cpp
   containers/records/CreateR.cpp
-  
-  crypto/ed25519.cpp
+
+  libs/ed25519-donna/ed25519.cpp
 )
 
 # define our chain of dependencies
 add_dependencies(onions-json-rpc onions-jsoncpp)
 add_dependencies(onions-spec onions-json-rpc)
-add_dependencies(onions-common onions-json-rpc onions-spec onions-cyoencode onions-libscrypt)
+add_dependencies(onions-common onions-json-rpc onions-spec onions-cyoencode)
 
 # set library versions so that sonames are properly set
 set_target_properties(onions-common     PROPERTIES VERSION 0)
 set_target_properties(onions-jsoncpp    PROPERTIES VERSION 1.6.5)
-set_target_properties(onions-libscrypt  PROPERTIES VERSION 1.20)
 set_target_properties(onions-cyoencode  PROPERTIES VERSION 1.1.1)
 
 # set the list of directories that contain headers
@@ -103,7 +95,6 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf ${CMAKE_INSTALL_PREFIX
 install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-cyoencode  LIBRARY  DESTINATION lib/onions-common/)
-install(FILES   ${LIBSCRYPT_LIB}           DESTINATION lib/onions-common/)
 SET(JSONRPC_LIB "libs/libjson-rpc-cpp/build/lib/")
 install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so        DESTINATION lib/onions-common/)
 install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so.0      DESTINATION lib/onions-common/)
@@ -128,11 +119,11 @@ install(FILES Utils.hpp                                         DESTINATION ${HE
 install(FILES containers/MerkleTree.hpp                         DESTINATION ${HEADERS}/containers)
 install(FILES containers/records/Record.hpp                     DESTINATION ${HEADERS}/containers/records)
 install(FILES containers/records/CreateR.hpp                    DESTINATION ${HEADERS}/containers/records)
-install(FILES crypto/ed25519.h                                  DESTINATION ${HEADERS}/crypto)
+install(FILES libs/ed25519-donna/ed25519.h                      DESTINATION ${HEADERS}/libs/ed25519-donna)
 
 # install headers for our dependencies
 install(FILES libs/jsoncpp/json/json.h                          DESTINATION ${HEADERS}/json/)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/AbstractSpecClient.h  DESTINATION ${HEADERS}/spec)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/SpecClient.h          DESTINATION ${HEADERS}/spec)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/AbstractSpecServer.h  DESTINATION ${HEADERS}/spec)
 
 # install headers for json-rpc-cpp dependency
@@ -172,4 +163,3 @@ configure_file(
 add_custom_target(uninstall
 	COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 )
-

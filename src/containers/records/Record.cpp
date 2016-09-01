@@ -7,15 +7,14 @@
 #include <botan/sha2_64.h>
 #include <botan/base64.h>
 #include <CyoEncode/CyoEncode.hpp>
-#include <libscrypt/libscrypt.h>
 #include <thread>
 
+long attempts_ = 0;
 
 Record::Record(Botan::RSA_PublicKey* pubKey)
     : privateKey_(nullptr), publicKey_(pubKey), valid_(false), validSig_(false)
 {
   nonce_.fill(0);
-  scrypted_.fill(0);
   signature_.fill(0);
 }
 
@@ -44,7 +43,6 @@ Record::Record(const Record& other)
       privateKey_(other.privateKey_),
       publicKey_(other.publicKey_),
       nonce_(other.nonce_),
-      scrypted_(other.scrypted_),
       signature_(other.signature_),
       valid_(other.valid_),
       validSig_(other.validSig_)
@@ -205,40 +203,40 @@ void Record::makeValid(uint8_t nWorkers)
 
   Log::get().notice("Making the Record valid... \n");
 
+  attempts_ = 0;
+
   bool found = false;
   bool* foundSig = &found;
 
   std::vector<std::thread> workers;
   for (uint8_t n = 0; n < nWorkers; n++)
   {
-    workers.push_back(std::thread(
-        [n, nWorkers, foundSig, this]()
-        {
-          std::string name("worker " + std::to_string(n + 1));
+    workers.push_back(std::thread([n, nWorkers, foundSig, this]() {
+      std::string name("worker " + std::to_string(n + 1));
 
-          Log::get().notice("Starting " + name);
+      Log::get().notice("Starting " + name);
 
-          auto record = std::make_shared<Record>(*this);
-          record->nonce_[nonce_.size() - 1] = n;
-          if (record->makeValid(0, nWorkers, foundSig) == WorkStatus::Success)
-          {
-            Log::get().notice("Success from " + name);
+      auto record = std::make_shared<Record>(*this);
+      record->nonce_[nonce_.size() - 1] = n;
+      if (record->makeValid(0, nWorkers, foundSig) == WorkStatus::Success)
+      {
+        Log::get().notice("Success from " + name + ", attempts: " +
+                          std::to_string(attempts_));
 
-            // save successful answer
-            nonce_ = record->nonce_;
-            scrypted_ = record->scrypted_;
-            signature_ = record->signature_;
-            valid_ = true;
-          }
+        // Log::get().notice("Attempts: " + attempts_);
 
-          Log::get().notice("Shutting down " + name);
-        }));
+        // save successful answer
+        nonce_ = record->nonce_;
+        signature_ = record->signature_;
+        valid_ = true;
+      }
+
+      Log::get().notice("Shutting down " + name);
+    }));
   }
 
-  std::for_each(workers.begin(), workers.end(), [](std::thread& t)
-                {
-                  t.join();
-                });
+  std::for_each(workers.begin(), workers.end(),
+                [](std::thread& t) { t.join(); });
 
   bool tmp = false;
   computeValidity(&tmp);  // todo: faster way than this?
@@ -269,7 +267,7 @@ std::string Record::getType() const
 
 uint32_t Record::getDifficulty() const
 {
-  return 7;  // 1/2^x chance of success, so order of magnitude
+  return 17;  // 1/2^x chance of success, so order of magnitude
 }
 
 
@@ -295,7 +293,6 @@ Json::Value Record::asJSONObj() const
   if (isValid())
   {
     obj["nonce"] = Botan::base64_encode(nonce_.data(), nonce_.size());
-    obj["pow"] = Botan::base64_encode(scrypted_.data(), scrypted_.size());
     obj["recordSig"] =
         Botan::base64_encode(signature_.data(), signature_.size());
   }
@@ -337,8 +334,7 @@ std::ostream& operator<<(std::ostream& os, const Record& dt)
 
   os << "      Proof of Work: ";
   if (dt.isValid())
-    os << Botan::base64_encode(dt.scrypted_.data(), dt.scrypted_.size())
-       << std::endl;
+    os << "Below threshold" << std::endl;
   else
     os << "<regeneration required>" << std::endl;
 
@@ -413,14 +409,6 @@ void Record::computeValidity(bool* abortSig)
     return;
   }
 
-  // updated scrypted_, append scrypted_ to buffer, check for errors
-  if (updateAppendScrypt(buffer) < 0)
-  {
-    Log::get().warn("Error with scrypt call!");
-    delete[] buffer.first;
-    return;
-  }
-
   if (*abortSig)  // stop if another worker has won
   {
     delete[] buffer.first;
@@ -438,27 +426,12 @@ void Record::computeValidity(bool* abortSig)
 // scrypted_ and signature_ without buffer overflow
 UInt8Array Record::computeCentral()
 {
-  std::string str(type_ + name_);
-  for (auto pair : subdomains_)
-    str += pair.first + pair.second;
-  str += contact_;
-
-  int index = 0;
-  auto pubKey = getPublicKey();
-  const size_t centralLen = str.length() + nonce_.size() + pubKey.second;
-  uint8_t* central =
-      new uint8_t[centralLen + scrypted_.size() + signature_.size()];
-
-  memcpy(central + index, str.c_str(), str.size());  // copy string into array
-  index += str.size();
-
-  memcpy(central + index, nonce_.data(), nonce_.size());
-  index += nonce_.size();
-
-  memcpy(central + index, pubKey.first, pubKey.second);
+  const size_t bufferSize = nonce_.size() + signature_.size();
+  uint8_t* buffer = new uint8_t[bufferSize];
+  memcpy(buffer, nonce_.data(), nonce_.size());
 
   // std::cout << Botan::base64_encode(central, centralLen) << std::endl;
-  return std::make_pair(central, centralLen);
+  return std::make_pair(buffer, bufferSize);
 }
 
 
@@ -472,25 +445,24 @@ void Record::updateAppendSignature(UInt8Array& buffer)
   {  // if we have a key, sign it
     // https://stackoverflow.com/questions/14263346/
     // http://botan.randombit.net/manual/pubkey.html#signatures
-    Botan::PK_Signer signer(*privateKey_, "EMSA-PKCS1-v1_5(SHA-384)");
+    Botan::PK_Signer signer(*privateKey_, "EMSA4(SHA-256)");
     auto sig = signer.sign_message(buffer.first, buffer.second, rng);
     memcpy(signature_.data(), sig, sig.size());
     validSig_ = true;
   }
   else
   {  // we are validating a public Record, so confirm the signature
-    Botan::PK_Verifier verifier(*publicKey_, "EMSA-PKCS1-v1_5(SHA-384)");
+    Botan::PK_Verifier verifier(*publicKey_, "EMSA4(SHA-256)");
     validSig_ = verifier.verify_message(buffer.first, buffer.second,
                                         signature_.data(), signature_.size());
   }
 
   // append into buffer
-  memcpy(buffer.first + buffer.second, signature_.data(), signature_.size());
-  buffer.second += signature_.size();
+  memcpy(buffer.first + nonce_.size(), signature_.data(), signature_.size());
 }
 
 
-
+/*
 // performs scrypt on buffer, appends result to buffer, returns scrypt status
 int Record::updateAppendScrypt(UInt8Array& buffer)
 {
@@ -516,7 +488,7 @@ int Record::updateAppendScrypt(UInt8Array& buffer)
 
   return r;
 }
-
+*/
 
 
 // checks whether the Record is valid based on the hash of the buffer
@@ -533,7 +505,8 @@ void Record::updateValidity(const UInt8Array& buffer)
     valid_ = true;
   else
   {
-    Log::get().notice(Botan::base64_encode(nonce_.data(), nonce_.size()) +
-                      " -> not valid");
+    attempts_++;
+    // Log::get().notice(Botan::base64_encode(nonce_.data(), nonce_.size()) +
+    //                  " -> not valid");
   }
 }

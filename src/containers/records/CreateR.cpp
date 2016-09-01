@@ -20,7 +20,6 @@ CreateR::CreateR(const std::string& contact,
                  const std::string& name,
                  const NameList& subdomains,
                  const std::string& nonce,
-                 const std::string& pow,
                  const std::string& sig,
                  Botan::RSA_PublicKey* pubKey)
     : Record(pubKey)
@@ -31,6 +30,5 @@ CreateR::CreateR(const std::string& contact,
   setSubdomains(subdomains);
 
   Botan::base64_decode(nonce_.data(), nonce, false);
-  Botan::base64_decode(scrypted_.data(), pow, false);
   Botan::base64_decode(signature_.data(), sig, false);
 }

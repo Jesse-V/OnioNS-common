@@ -57,7 +57,6 @@ class Record
   WorkStatus makeValid(uint8_t, uint8_t, bool*);
   virtual UInt8Array computeCentral();
   void updateAppendSignature(UInt8Array& buffer);
-  int updateAppendScrypt(UInt8Array& buffer);
   void updateValidity(const UInt8Array& buffer);
 
   std::string type_, name_, contact_;
@@ -67,7 +66,6 @@ class Record
   Botan::RSA_PublicKey* publicKey_;
 
   std::array<uint8_t, Const::RECORD_NONCE_LEN> nonce_;
-  std::array<uint8_t, Const::RECORD_SCRYPTED_LEN> scrypted_;
   std::array<uint8_t, Const::SIGNATURE_LEN> signature_;
   bool valid_, validSig_;
 };

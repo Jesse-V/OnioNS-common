@@ -30,8 +30,7 @@ bool Cache::add(const std::vector<RecordPtr>& records)
 std::vector<RecordPtr> Cache::getSortedList()
 {
   std::sort(records_.begin(), records_.end(),
-            [](const RecordPtr& a, const RecordPtr& b)
-            {
+            [](const RecordPtr& a, const RecordPtr& b) {
               return a->getName().compare(b->getName());
             });
   return records_;

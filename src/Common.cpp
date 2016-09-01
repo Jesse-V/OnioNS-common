@@ -3,7 +3,7 @@
 #include "containers/records/CreateR.hpp"
 #include "Utils.hpp"
 #include "Log.hpp"
-#include "crypto/ed25519.h"
+#include "ed25519-donna/ed25519.h"
 #include <botan/sha2_64.h>
 #include <botan/base64.h>
 #include <fstream>
@@ -109,7 +109,6 @@ RecordPtr Common::assembleRecord(const Json::Value& rVal)
 {
   auto contact = rVal["contact"].asString();
   auto nonce = rVal["nonce"].asString();
-  auto pow = rVal["pow"].asString();
   auto pubHSKey = rVal["pubHSKey"].asString();
   auto sig = rVal["recordSig"].asString();
   auto type = rVal["type"].asString();
@@ -128,8 +127,7 @@ RecordPtr Common::assembleRecord(const Json::Value& rVal)
   }
 
   auto key = Utils::base64ToRSA(pubHSKey);
-  return std::make_shared<CreateR>(contact, name, subdomains, nonce, pow, sig,
-                                   key);
+  return std::make_shared<CreateR>(contact, name, subdomains, nonce, sig, key);
 }
 
 
