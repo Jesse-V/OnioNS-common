@@ -84,7 +84,6 @@ include_directories(libs libs/jsoncpp /usr/include/botan-1.10)
 add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\))
 
 # define linking
-SET(LIBSCRYPT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/libs/libscrypt/libscrypt.so.0)
 target_link_libraries(onions-common pthread botan-1.10)
 
 # define library path for Linux's load linker
@@ -95,7 +94,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf ${CMAKE_INSTALL_PREFIX
 install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-cyoencode  LIBRARY  DESTINATION lib/onions-common/)
-SET(JSONRPC_LIB "libs/libjson-rpc-cpp/build/lib/")
+SET(JSONRPC_LIB "libs/libjson-rpc-cpp/build/lib")
 install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so        DESTINATION lib/onions-common/)
 install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so.0      DESTINATION lib/onions-common/)
 install(FILES ${JSONRPC_LIB}/libjsonrpccpp-client.so.0.6.0  DESTINATION lib/onions-common/)
