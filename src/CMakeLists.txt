@@ -137,11 +137,6 @@ install(FILES ${JSONRPC_BASE}/server/iprocedureinvokationhandler.h  DESTINATION 
 install(FILES ${JSONRPC_BASE}/server/requesthandlerfactory.h        DESTINATION ${HEADERS}/jsonrpccpp/server)
 install(FILES ${JSONRPC_BASE}/server/connectors/httpserver.h        DESTINATION ${HEADERS}/jsonrpccpp/server/connectors)
 
-# install resources
-set(ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
-install(FILES ${ASSETS}/mirrors.json      DESTINATION share/onions-common/)
-install(FILES ${ASSETS}/quorum.json       DESTINATION share/onions-common/)
-
 # setup uninstall target (use libjson-rpc-cpp's uninstall method)
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/cmake/cmake_uninstall.cmake.in"
