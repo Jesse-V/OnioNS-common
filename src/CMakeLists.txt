@@ -117,7 +117,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/SpecClient.h          DESTINATION ${HE
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/AbstractSpecServer.h  DESTINATION ${HEADERS}/spec)
 
 # install headers for json-rpc-cpp dependency
-set(JSONRPC_BASE "libs/libjson-rpc-cpp/src/jsonrpccpp/")
+set(JSONRPC_BASE "libs/libjson-rpc-cpp/src/jsonrpccpp")
 install(FILES ${JSONRPC_BASE}/client.h                              DESTINATION ${HEADERS}/jsonrpccpp/)
 install(FILES ${JSONRPC_BASE}/server.h                              DESTINATION ${HEADERS}/jsonrpccpp/)
 install(FILES ${JSONRPC_BASE}/common/exception.h                    DESTINATION ${HEADERS}/jsonrpccpp/common/)
