@@ -18,6 +18,7 @@ script:
 
 after_success:
   - sudo dpkg -i ../$package\_amd64.deb  # install .deb
+  - sha256sum ../$package\_amd64.deb
 
 language: cpp
 

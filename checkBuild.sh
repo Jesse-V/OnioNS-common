@@ -13,10 +13,15 @@
 export CXX=/usr/share/clang/scan-build-3.8/libexec/c++-analyzer
 export CC=/usr/share/clang/scan-build-3.8/libexec/ccc-analyzer
 
+# delete any previous build as linking fails if there's a mix of compilers
+rm -rf build src/libs/libjson-rpc-cpp/build
+
 mkdir -p build/
 cd build
 scan-build-3.8 cmake ../src -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_C_COMPILER=$CC
 # -DCMAKE_BUILD_TYPE=Debug
+
+# 2>&1 | grep -F -v "src/libs"
 
 echo "Compiling with Clang static analysis...  -------------------------------"
 rm -rf /tmp/scan-build-*
@@ -30,7 +35,8 @@ if (scan-build-3.8 -maxloop 16 -enable-checker core -enable-checker cplusplus -d
   else
     echo "Additional static analysis...        ----------------------------------------------"
     cd ..
-    find src -type f -follow -print | cppcheck -i "src/assets" -i "src/libs" -i "src/spec/rpc_spec.json" --enable=all --platform=unix64 --inconclusive --file-list=-
+
+    find src -type f -follow -print | grep -F -v "src/libs" | grep -E "\.h|\.c" | cppcheck -i "src/spec/rpc_spec.json" --enable=all --platform=unix64 --inconclusive --file-list=-
 
     echo "Success: compilation and scan-build check successful!"
   fi

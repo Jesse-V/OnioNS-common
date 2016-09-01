@@ -34,5 +34,5 @@ if (make -j $(grep -c ^processor /proc/cpuinfo)) then
 else
   cd ..
   rm -rf build/
-  rm -rf src/libs/libjson-rpc-cpp/build/
+  # rm -rf src/libs/libjson-rpc-cpp/build/
 fi

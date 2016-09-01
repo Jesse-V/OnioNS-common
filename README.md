@@ -7,7 +7,7 @@ This is the software implementation of the system described in "The Onion Name S
 
 ### Repository Details [![Build Status](https://travis-ci.org/Jesse-V/OnioNS-common.svg)](https://travis-ci.org/Jesse-V/OnioNS-common)
 
-This repository provides the common shared library for the other OnioNS packages. It is a required dependency for the HS, server, and client components. You can clone this repository using **git clone --recursive https://github.com/Jesse-V/OnioNS-common** since it uses Jesse-V/libjson-rpc-cpp, which adds support for Socks5 proxies to cinemast/libjson-rpc-cpp.
+This repository provides the common shared library for the other OnioNS packages. It is a required dependency for the HS, server, and client components. You can clone this repository using **_git clone --recursive https://github.com/Jesse-V/OnioNS-common_** since it uses Jesse-V/libjson-rpc-cpp, which adds support for Socks5 proxies to cinemast/libjson-rpc-cpp.
 
 ### Supported Platforms
 
