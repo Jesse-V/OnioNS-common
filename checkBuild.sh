@@ -15,7 +15,6 @@ export CC=/usr/share/clang/scan-build-3.8/libexec/ccc-analyzer
 
 mkdir -p build/
 cd build
-echo $CXX $CC
 scan-build-3.8 cmake ../src -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_C_COMPILER=$CC
 # -DCMAKE_BUILD_TYPE=Debug
 

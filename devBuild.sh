@@ -22,8 +22,10 @@ echo "Preparing build...        ----------------------------------------------"
 export CXX=clang++-3.8
 export CC=clang-3.8
 
-./configure
+# set up build
+mkdir -p build
 cd build
+cmake ../src
 
 echo "Compiling...              ----------------------------------------------"
 if (make -j $(grep -c ^processor /proc/cpuinfo)) then
