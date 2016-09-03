@@ -97,7 +97,7 @@ include_directories(libs libs/jsoncpp /usr/include/botan-1.10)
 add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\))
 
 # define linking
-target_link_libraries(onions-common pthread botan-1.10 onions-cyoencode curl)
+target_link_libraries(onions-common pthread botan-1.10 curl)
 
 # define library path for Linux's load linker
 # https://fedoraproject.org/wiki/Packaging:Guidelines#Alternatives_to_Rpath
