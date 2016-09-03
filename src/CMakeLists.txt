@@ -40,13 +40,13 @@ add_custom_target(onions-json-rpc # I could make this a separate package, but th
 # generate our empty base classes for the JSON-RPC API
 add_custom_target(onions-api
   COMMAND
-    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/api/network.json --cpp-server=OnionsNetworkServer --cpp-client=OnionsNetworkClient &&
-    mv -f onionsnetworkserver.h OnionsNetworkServer.h &&
-    mv -f onionsnetworkclient.h OnionsNetworkClient.h &&
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/api/network.json --cpp-server=NetworkServerInterface --cpp-client=NetworkClient &&
+    mv -f networkserverinterface.h NetworkServerInterface.h &&
+    mv -f networkclient.h NetworkClient.h &&
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/api/client-ipc.json --cpp-server=OnionsLocalServer --cpp-client=OnionsLocalClient &&
-    mv -f onionslocalserver.h OnionsLocalServer.h &&
-    mv -f onionslocalclient.h OnionsLocalClient.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/api/client-ipc.json --cpp-server=LocalServerInterface --cpp-client=LocalClient &&
+    mv -f localserverinterface.h LocalServerInterface.h &&
+    mv -f localclient.h LocalClient.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -90,7 +90,7 @@ include_directories(libs libs/jsoncpp /usr/include/botan-1.10)
 add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\))
 
 # define linking
-target_link_libraries(onions-common pthread botan-1.10)
+target_link_libraries(onions-common pthread botan-1.10 curl)
 
 # define library path for Linux's load linker
 # https://fedoraproject.org/wiki/Packaging:Guidelines#Alternatives_to_Rpath
@@ -100,7 +100,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf ${CMAKE_INSTALL_PREFIX
 install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-cyoencode  LIBRARY  DESTINATION lib/onions-common/)
-install(DIRECTORY libs/libjson-rpc-cpp/build/lib DESTINATION lib/onions-common/)
+install(DIRECTORY libs/libjson-rpc-cpp/build/lib DESTINATION lib/onions-common)
 
 # install load linker file
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf DESTINATION /etc/ld.so.conf.d/)
@@ -118,11 +118,11 @@ install(FILES containers/records/CreateR.hpp                    DESTINATION ${HE
 install(FILES libs/ed25519-donna/ed25519.h                      DESTINATION ${HEADERS}/libs/ed25519-donna)
 
 # install headers for our dependencies
-install(FILES libs/jsoncpp/json/json.h                            DESTINATION ${HEADERS}/json/)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OnionsNetworkServer.h   DESTINATION ${HEADERS}/api)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OnionsNetworkClient.h   DESTINATION ${HEADERS}/api)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OnionsLocalServer.h     DESTINATION ${HEADERS}/api)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OnionsLocalClient.h     DESTINATION ${HEADERS}/api)
+install(FILES libs/jsoncpp/json/json.h                                DESTINATION ${HEADERS}/json/)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NetworkServerInterface.h    DESTINATION ${HEADERS}/api)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NetworkClient.h             DESTINATION ${HEADERS}/api)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LocalServerInterface.h      DESTINATION ${HEADERS}/api)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LocalClient.h               DESTINATION ${HEADERS}/api)
 
 # install headers for json-rpc-cpp dependency
 set(JSONRPC_BASE "libs/libjson-rpc-cpp/src/jsonrpccpp")
