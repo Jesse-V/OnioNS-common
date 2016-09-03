@@ -8,12 +8,19 @@ set(MINOR_VERSION 1)
 set(PATCH_VERSION 0)
 set(SO_VERSION    0)
 
+message(STATUS "Build type is ${CMAKE_BUILD_TYPE}")
+
 # define compiler options for Clang and GCC/G++
-SET(COMMON_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g -std=c++11 -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM -fstack-protector -D_FORTIFY_SOURCE=1")
+# I'm aware of http://voices.canonical.com/jussi.pakkanen/2013/03/26/a-list-of-common-cmake-antipatterns/
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -fstack-protector -D_FORTIFY_SOURCE=1")
+SET(CLANG_DEBUG "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG} -Wno-c++98-compat-pedantic -pedantic -Weverything -Wno-exit-time-destructors -Wno-weak-vtables -Wno-padded -Wno-deprecated -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-missing-noreturn -Wno-sign-conversion -Wno-shadow")
+SET(GCC_DEBUG "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -pedantic -Wdouble-promotion -Wfloat-equal -Wunsafe-loop-optimizations")
+
+# set compiler flags according to the type of compiler
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -Wno-c++98-compat-pedantic -pedantic -Weverything -Wno-exit-time-destructors -Wno-weak-vtables -Wno-padded -Wno-deprecated -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-missing-noreturn -Wno-sign-conversion -Wno-shadow")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CLANG_DEBUG}")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -Wall -Wextra -pedantic -Wdouble-promotion -Wfloat-equal -Wunsafe-loop-optimizations")
+  set(CMAKE_CXX_FLAGS_DEBUG "${GCC_DEBUG}")
 endif()
 
 # define special compile flags for JsonCpp
@@ -32,7 +39,7 @@ add_custom_target(onions-json-rpc # I could make this a separate package, but th
     mkdir -p build &&
     cd build &&
     cmake -DJSONCPP_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/libs/jsoncpp -DJSONCPP_LIBRARY=${CMAKE_CURRENT_BINARY_DIR}/libonions-jsoncpp.so -DCOMPILE_TESTS=NO -DCOMPILE_EXAMPLES=NO -DUNIX_DOMAIN_SOCKET_SERVER=NO -DUNIX_DOMAIN_SOCKET_CLIENT=NO -DCATCH_INCLUDE_DIR=/tmp .. &&
-    make
+    make -j 2
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/
   VERBATIM
 )
@@ -90,17 +97,27 @@ include_directories(libs libs/jsoncpp /usr/include/botan-1.10)
 add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\))
 
 # define linking
-target_link_libraries(onions-common pthread botan-1.10 curl)
+target_link_libraries(onions-common pthread botan-1.10 onions-cyoencode curl)
 
 # define library path for Linux's load linker
 # https://fedoraproject.org/wiki/Packaging:Guidelines#Alternatives_to_Rpath
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf ${CMAKE_INSTALL_PREFIX}/onions-common)
 
 # install libraries
+SET(JSONRPC_LIB "libs/libjson-rpc-cpp/build/lib")
 install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION lib/onions-common/)
 install(TARGETS onions-cyoencode  LIBRARY  DESTINATION lib/onions-common/)
-install(DIRECTORY libs/libjson-rpc-cpp/build/lib DESTINATION lib/onions-common)
+install(FILES
+  ${JSONRPC_LIB}/libjsonrpccpp-common.so
+  ${JSONRPC_LIB}/libjsonrpccpp-common.so.0
+  ${JSONRPC_LIB}/libjsonrpccpp-common.so.0.7.0
+  ${JSONRPC_LIB}/libjsonrpccpp-client.so
+  ${JSONRPC_LIB}/libjsonrpccpp-client.so.0
+  ${JSONRPC_LIB}/libjsonrpccpp-client.so.0.7.0
+  ${JSONRPC_LIB}/libjsonrpccpp-server.so
+  ${JSONRPC_LIB}/libjsonrpccpp-server.so.0
+  ${JSONRPC_LIB}/libjsonrpccpp-server.so.0.7.0  DESTINATION lib/onions-common/)
 
 # install load linker file
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf DESTINATION /etc/ld.so.conf.d/)
@@ -146,9 +163,6 @@ install(FILES ${JSONRPC_BASE}/server/requesthandlerfactory.h        DESTINATION 
 install(FILES ${JSONRPC_BASE}/server/connectors/httpserver.h        DESTINATION ${HEADERS}/jsonrpccpp/server/connectors)
 
 # setup uninstall target (use libjson-rpc-cpp's uninstall method)
-message(STATUS "Source Dir is ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "Cmake Uninstall is ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/cmake/cmake_uninstall.cmake.in")
-message(STATUS "Build type is ${CMAKE_BUILD_TYPE}")
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/cmake/cmake_uninstall.cmake.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
