@@ -146,8 +146,11 @@ install(FILES ${JSONRPC_BASE}/server/requesthandlerfactory.h        DESTINATION 
 install(FILES ${JSONRPC_BASE}/server/connectors/httpserver.h        DESTINATION ${HEADERS}/jsonrpccpp/server/connectors)
 
 # setup uninstall target (use libjson-rpc-cpp's uninstall method)
+message(STATUS "Source Dir is ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "Cmake Uninstall is ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/cmake/cmake_uninstall.cmake.in")
+message(STATUS "Build type is ${CMAKE_BUILD_TYPE}")
 configure_file(
-	"libs/libjson-rpc-cpp/cmake/cmake_uninstall.cmake.in"
+	"${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/cmake/cmake_uninstall.cmake.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
 	IMMEDIATE @ONLY
 )
