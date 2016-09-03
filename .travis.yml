@@ -3,11 +3,12 @@ compiler:
   - gcc
 
 os: linux
+language: cpp
 
 before_install:
-  - sudo add-apt-repository "deb mirror://mirrors.ubuntu.com/mirrors.txt trusty main restricted universe" # switch to Ubuntu Trusty
+  - sudo add-apt-repository "deb http://ubuntu.cs.utah.edu/ubuntu/ trusty main restricted universe"
   - sudo apt-get update -qq
-  - sudo apt-get install -qq g++ clang cmake dpkg-dev libbotan1.10-dev libcurl4-openssl-dev libargtable2-dev libmicrohttpd-dev # install dependencies
+  - sudo apt-get install -qq g++ clang cmake dpkg-dev libbotan1.10-dev libcurl4-openssl-dev libargtable2-dev libmicrohttpd-dev
 
 script:
   - package=tor-onions-common_$(grep -m 1 -o '(.*)' debian/changelog | cut -c 2- | rev | cut -c 2- | rev)
@@ -19,8 +20,6 @@ script:
 after_success:
   - sudo dpkg -i ../$package\_amd64.deb  # install .deb
   - sha256sum ../$package\_amd64.deb
-
-language: cpp
 
 notifications:
   email: false

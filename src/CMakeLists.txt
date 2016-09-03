@@ -147,7 +147,7 @@ install(FILES ${JSONRPC_BASE}/server/connectors/httpserver.h        DESTINATION 
 
 # setup uninstall target (use libjson-rpc-cpp's uninstall method)
 configure_file(
-	"${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/cmake/cmake_uninstall.cmake.in"
+	"libs/libjson-rpc-cpp/cmake/cmake_uninstall.cmake.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
 	IMMEDIATE @ONLY
 )
