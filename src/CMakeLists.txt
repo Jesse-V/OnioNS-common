@@ -41,11 +41,12 @@ add_custom_target(onions-json-rpc # I could make this a separate package, but th
 add_custom_target(onions-api
   COMMAND
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/api/network.json --cpp-server=OnionsNetworkServer --cpp-client=OnionsNetworkClient &&
-    mv -f onionsnetworkserver.h OnionsNetworkServer.h &&
-    mv -f onionsnetworkclient.h OnionsNetworkClient.h
+    mv -f onionsnetworkserver.h OnionsNetworkServer.hpp &&
+    mv -f onionsnetworkclient.h OnionsNetworkClient.hpp &&
+
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/api/client-ipc.json --cpp-server=OnionsLocalServer --cpp-client=OnionsLocalClient &&
-    mv -f onionslocalserver.h OnionsLocalServer.h &&
-    mv -f onionslocalclient.h OnionsLocalClient.h
+    mv -f onionslocalserver.h OnionsLocalServer.hpp &&
+    mv -f onionslocalclient.h OnionsLocalClient.hpp
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
