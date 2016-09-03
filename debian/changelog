@@ -1,3 +1,11 @@
+tor-onions-common (1.1.0.1~trusty) trusty; urgency=medium
+  * Switch the network protocol to JSON-RPC.
+  * Remove outdated networking and signature-verification code for now.
+  * Switch the proof-of-work from scrypt to SHA-2.
+  * Generally align base implementation with PoPETS 2017.1 paper.
+
+ -- Jesse Victors <kernelcorn@torproject.org>  Sat, 03 Sep 2016 13:00:00 -0500
+
 tor-onions-common (0.7.0.1~trusty) trusty; urgency=medium
 
   * Use Merkle tree to prevent non-Quorum name server from lying to client.
