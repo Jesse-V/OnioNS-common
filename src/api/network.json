@@ -1,0 +1,47 @@
+[
+  {
+    "name": "commitTicket",
+    "params": {
+      "version": 0,
+      "commit": "sha256 hash value"
+    }
+  },
+  {
+    "name": "revealTicket",
+    "params": {
+      "version": 0,
+      "record": {}
+    }
+  },
+  {
+    "name": "putRecord",
+    "params": {
+      "version": 0,
+      "record": {}
+    }
+  },
+  {
+    "name": "getRecordWithSubtree",
+    "params": {
+      "version": 0,
+      "domain": "example.tor"
+    },
+    "returns": {}
+  },
+  {
+    "name": "getDomain",
+    "params": {
+      "version": 0,
+      "domain": "address.onion"
+    },
+    "returns": "example.tor"
+  },
+  {
+    "name": "getRecordsSince",
+    "params": {
+      "version": 0,
+      "time": 0
+    },
+    "returns": []
+  }
+]

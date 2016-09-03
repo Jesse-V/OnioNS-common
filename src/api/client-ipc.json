@@ -1,0 +1,20 @@
+[
+  {
+    "name": "isReady",
+    "returns": true
+  },
+  {
+    "name": "resolveDomain",
+    "params": {
+      "name": "example.tor"
+    },
+    "returns": "address.onion"
+  },
+  {
+    "name": "resolveOnion",
+    "params": {
+      "name": "address.onion"
+    },
+    "returns": "example.tor"
+  }
+]

@@ -37,12 +37,15 @@ add_custom_target(onions-json-rpc # I could make this a separate package, but th
   VERBATIM
 )
 
-# create a target that regenerates our specification hook classes for JSON-RPC
-add_custom_target(onions-spec
+# generate our empty base classes for the JSON-RPC API
+add_custom_target(onions-api
   COMMAND
-    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/rpc_spec.json --cpp-server=AbstractSpecServer --cpp-client=SpecClient &&
-    mv -f abstractspecserver.h AbstractSpecServer.h &&
-    mv -f specclient.h SpecClient.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/api/network.json --cpp-server=OnionsNetworkServer --cpp-client=OnionsNetworkClient &&
+    mv -f onionsnetworkserver.h OnionsNetworkServer.h &&
+    mv -f onionsnetworkclient.h OnionsNetworkClient.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/bin/jsonrpcstub ${CMAKE_CURRENT_SOURCE_DIR}/api/client-ipc.json --cpp-server=OnionsLocalServer --cpp-client=OnionsLocalClient &&
+    mv -f onionslocalserver.h OnionsLocalServer.h &&
+    mv -f onionslocalclient.h OnionsLocalClient.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -64,13 +67,15 @@ add_library(onions-common SHARED
   containers/records/Record.cpp
   containers/records/CreateR.cpp
 
+  bitcoin/HttpGet.cpp
+
   libs/ed25519-donna/ed25519.cpp
 )
 
 # define our chain of dependencies
 add_dependencies(onions-json-rpc onions-jsoncpp)
-add_dependencies(onions-spec onions-json-rpc)
-add_dependencies(onions-common onions-json-rpc onions-spec onions-cyoencode)
+add_dependencies(onions-api onions-json-rpc)
+add_dependencies(onions-common onions-json-rpc onions-api onions-cyoencode)
 
 # set library versions so that sonames are properly set
 set_target_properties(onions-common     PROPERTIES VERSION ${MAJOR_VERSION}.${MINOR_VERSION})
@@ -112,9 +117,11 @@ install(FILES containers/records/CreateR.hpp                    DESTINATION ${HE
 install(FILES libs/ed25519-donna/ed25519.h                      DESTINATION ${HEADERS}/libs/ed25519-donna)
 
 # install headers for our dependencies
-install(FILES libs/jsoncpp/json/json.h                          DESTINATION ${HEADERS}/json/)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/SpecClient.h          DESTINATION ${HEADERS}/spec)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/AbstractSpecServer.h  DESTINATION ${HEADERS}/spec)
+install(FILES libs/jsoncpp/json/json.h                            DESTINATION ${HEADERS}/json/)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OnionsNetworkServer.h   DESTINATION ${HEADERS}/api)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OnionsNetworkClient.h   DESTINATION ${HEADERS}/api)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OnionsLocalServer.h     DESTINATION ${HEADERS}/api)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OnionsLocalClient.h     DESTINATION ${HEADERS}/api)
 
 # install headers for json-rpc-cpp dependency
 set(JSONRPC_BASE "libs/libjson-rpc-cpp/src/jsonrpccpp")

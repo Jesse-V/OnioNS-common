@@ -1,7 +1,7 @@
 Source: tor-onions-common
 Section: net
 Priority: optional
-Maintainer: Jesse Victors <kernelcorn@riseup.net>
+Maintainer: Jesse Victors <kernelcorn@torproject.org>
 Build-Depends: cmake, dpkg-dev, libbotan1.10-dev, libcurl4-openssl-dev, libargtable2-dev, libmicrohttpd-dev
 Standards-Version: 3.9.5
 Bugs: https://github.com/Jesse-V/OnioNS-common/issues
@@ -14,12 +14,13 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: tor (>= 0.2.6)
 Conflicts: tor-onions-common
 Description: Shared library for the Onion Name System
- OnioNS is a distributed, privacy-enhanced, metadata-free, and highly usable
- DNS for Tor hidden services. OnioNS allows hidden service operators to select
- a meaningful and globally-unique domain name for their service, which users
- can then reference from the Tor Browser. The system is powered by the Tor
- network, relies on a distributed database, and provides anonymity to both
- operators and users. This project aims to address the major usability issue
- that has been with Tor hidden services since their introduction in 2002.
+ OnioNS is a privacy-enhanced, metadata-free, and highly-usable DNS for Tor
+ onion services. Administrators can use the Onion Name System to anonymously
+ register a meaningful and globally-unique domain name for their site. Users
+ can then load the site just by typing "example.tor" into the Tor Browser.
+ OnioNS is backwards-compatible with traditional .onion addresses, does not
+ require any modifications to the Tor binary or network, and there are no
+ central authorities in charge of the domain names. This project was
+ specifically engineered to solve the usability problem with onion services.
  .
  This package provides a shared library for the other OnioNS packages.
