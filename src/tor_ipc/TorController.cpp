@@ -2,6 +2,7 @@
 #include "TorController.hpp"
 #include "../Log.hpp"
 #include "../Utils.hpp"
+#include "../Common.hpp"
 #include "SocketException.hpp"
 #include <botan/hex_filt.h>
 #include <botan/pipe.h>
@@ -17,15 +18,16 @@ TorController::TorController(const std::string& ip, short controlPort)
 
 
 
-bool TorController::authenticateToTor(const std::string& authCookiePath)
+bool TorController::authenticateToTor(bool usePassword)
 {
-  std::string path = authCookiePath;
-  if (path.size() == 0)
-    path = getCookiePath();
+  std::string auth =
+      usePassword ? getPassword() : getCookieHash(getCookiePath());
 
-  std::string hash = getCookieHash(path);
+  if (usePassword)
+    *socket_ << "AUTHENTICATE \"" + auth + "\"\r\n";
+  else
+    *socket_ << "AUTHENTICATE " + auth + "\r\n";
 
-  *socket_ << "AUTHENTICATE " + hash + "\r\n";
   std::string response;
   *socket_ >> response;
 
@@ -156,6 +158,22 @@ std::string TorController::getCookieHash(const std::string& path)
   Botan::Pipe pipe(new Botan::Hex_Encoder(Botan::Hex_Encoder::Lowercase));
   pipe.process_msg(authBin);
   return pipe.read_all_as_string();
+}
+
+
+
+std::string TorController::getPassword()
+{
+  std::string path = Common::getWorkingDirectory() + "control.auth_pw";
+  Log::get().notice("Reading controller password from " + path);
+
+  std::ifstream pwFile(path);
+  if (!pwFile)
+    Log::get().error("Unable to open controller password!");
+
+  std::string pw;
+  pwFile >> pw;
+  return pw;
 }
 
 
