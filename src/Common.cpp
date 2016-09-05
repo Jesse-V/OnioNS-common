@@ -1,12 +1,15 @@
 
 #include "Common.hpp"
-#include "containers/records/CreateR.hpp"
+#include "records/CreateR.hpp"
 #include "Utils.hpp"
 #include "Log.hpp"
-#include "ed25519-donna/ed25519.h"
-#include <botan/sha2_64.h>
-#include <botan/base64.h>
-#include <fstream>
+//#include "ed25519-donna/ed25519.h"
+//#include <botan/sha2_64.h>
+//#include <botan/base64.h>
+//#include <fstream>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <pwd.h>
 
 
 RecordPtr Common::parseRecord(const std::string& json)
@@ -54,11 +57,11 @@ std::string Common::getDestination(const RecordPtr& record,
 }
 
 
-
+/*
 // modifies sig in place
 std::pair<bool, int> Common::verifyRootSignature(const Json::Value& sigObj,
                                                  ED_SIGNATURE& sig,
-                                                 const SHA384_HASH& root,
+                                                 const SHA256_HASH& root,
                                                  const std::string& key)
 {
   // sanity check
@@ -85,7 +88,7 @@ std::pair<bool, int> Common::verifyRootSignature(const Json::Value& sigObj,
   }
 
   // check signature
-  int status = ed25519_sign_open(root.data(), Const::SHA384_LEN, qPubKey.data(),
+  int status = ed25519_sign_open(root.data(), Const::SHA256_LEN, qPubKey.data(),
                                  sig.data());
 
   // announce results
@@ -97,6 +100,20 @@ std::pair<bool, int> Common::verifyRootSignature(const Json::Value& sigObj,
     Log::get().warn("General Ed25519 signature failure on root.");
 
   return std::make_pair(status == 0, sigObj["count"].asInt());
+}
+*/
+
+
+// returns the full path of ~/.OnioNS or creates it if it doesn't exist
+std::string Common::getWorkingDirectory()
+{
+  std::string workingDir(getpwuid(getuid())->pw_dir);
+  workingDir += "/.OnioNS/";
+
+  if (mkdir(workingDir.c_str(), 0750) == 0)
+    Log::get().notice("Working directory successfully created.");
+
+  return workingDir;
 }
 
 
