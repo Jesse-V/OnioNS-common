@@ -29,8 +29,9 @@ cmake ../src -DCMAKE_BUILD_TYPE=Debug
 
 echo "Compiling...              ----------------------------------------------"
 if (make -j $(grep -c ^processor /proc/cpuinfo)) then
+  echo "Compilation successful! Attempting to install..."
+  echo "sudo make install" && sudo make install
   cd ..
-  echo "Compilation successful!"
 else
   cd ..
   rm -rf build/
