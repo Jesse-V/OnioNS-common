@@ -4,6 +4,7 @@
 
 #include <botan/rsa.h>
 #include <cstdint>
+#include <vector>
 #include <string>
 
 class Utils
@@ -29,6 +30,7 @@ class Utils
 
   static void hex2bin(const uint8_t*, uint8_t*);
   static uint8_t char2int(const uint8_t);
+  static std::vector<std::string> split(const char*, char token = ' ');
 };
 
 #endif

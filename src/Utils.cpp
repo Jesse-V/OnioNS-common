@@ -197,3 +197,22 @@ uint8_t Utils::char2int(const uint8_t c)
   Log::get().error("Invalid character");
   return 0;
 }
+
+
+
+std::vector<std::string> Utils::split(const char* str, char c)
+{  // https://stackoverflow.com/questions/53849
+
+  std::vector<std::string> result;
+
+  do
+  {
+    const char* begin = str;
+    while (*str != c && *str)
+      str++;
+
+    result.push_back(std::string(begin, str));
+  } while (0 != *str++);
+
+  return result;
+}
