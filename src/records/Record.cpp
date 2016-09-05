@@ -4,7 +4,7 @@
 #include "../../Log.hpp"
 #include <botan/pubkey.h>
 #include <botan/sha160.h>
-#include <botan/sha2_64.h>
+#include <botan/sha2_32.h>
 #include <botan/base64.h>
 #include <CyoEncode/CyoEncode.hpp>
 #include <thread>
@@ -184,12 +184,12 @@ std::string Record::getOnion() const
 
 
 
-SHA384_HASH Record::getHash() const
+SHA256_HASH Record::getHash() const
 {
-  Botan::SHA_384 sha;
+  Botan::SHA_256 sha;
   auto hash = sha.process(asJSON());
 
-  SHA384_HASH hashArray;
+  SHA256_HASH hashArray;
   memcpy(hashArray.data(), hash, hashArray.size());
   return hashArray;
 }
@@ -495,8 +495,8 @@ int Record::updateAppendScrypt(UInt8Array& buffer)
 void Record::updateValidity(const UInt8Array& buffer)
 {
   // hash entire buffer and convert hash to number
-  Botan::SHA_384 sha384;
-  auto hash = sha384.process(buffer.first, buffer.second);
+  Botan::SHA_256 sha256;
+  auto hash = sha256.process(buffer.first, buffer.second);
   auto num = Utils::arrayToUInt32(hash, 0);
 
   // compare number against threshold

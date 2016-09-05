@@ -2,7 +2,7 @@
 #ifndef RECORD_HPP
 #define RECORD_HPP
 
-#include "../../Constants.hpp"
+#include "../Constants.hpp"
 #include <botan/botan.h>
 #include <botan/rsa.h>
 #include <json/json.h>
@@ -40,7 +40,7 @@ class Record
   bool setKey(Botan::RSA_PrivateKey*);
   UInt8Array getPublicKey() const;
   std::string getOnion() const;
-  SHA384_HASH getHash() const;
+  SHA256_HASH getHash() const;
 
   void makeValid(uint8_t);
   void computeValidity(bool*);  // updates valid_, with flag to abort work

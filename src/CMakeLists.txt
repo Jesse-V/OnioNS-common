@@ -70,12 +70,14 @@ add_library(onions-common SHARED
   Log.cpp
   Utils.cpp
 
-  containers/Cache.cpp
-  containers/MerkleTree.cpp
-  containers/records/Record.cpp
-  containers/records/CreateR.cpp
+  records/Record.cpp
+  records/CreateR.cpp
 
   bitcoin/HttpGet.cpp
+
+  tor_ipc/TorController.cpp
+  tor_ipc/ClientSocket.cpp
+  tor_ipc/Socket.cpp
 
   libs/ed25519-donna/ed25519.cpp
 )
@@ -122,20 +124,27 @@ install(FILES
 # install load linker file
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf DESTINATION /etc/ld.so.conf.d/)
 
-# install headers
+# install main headers
 set(HEADERS "include/onions-common/")
-install(FILES Common.hpp                                        DESTINATION ${HEADERS})
-install(FILES Config.hpp                                        DESTINATION ${HEADERS})
-install(FILES Constants.hpp                                     DESTINATION ${HEADERS})
-install(FILES Log.hpp                                           DESTINATION ${HEADERS})
-install(FILES Utils.hpp                                         DESTINATION ${HEADERS})
-install(FILES containers/MerkleTree.hpp                         DESTINATION ${HEADERS}/containers)
-install(FILES containers/records/Record.hpp                     DESTINATION ${HEADERS}/containers/records)
-install(FILES containers/records/CreateR.hpp                    DESTINATION ${HEADERS}/containers/records)
-install(FILES libs/ed25519-donna/ed25519.h                      DESTINATION ${HEADERS}/libs/ed25519-donna)
+install(FILES Common.hpp                        DESTINATION ${HEADERS})
+install(FILES Config.hpp                        DESTINATION ${HEADERS})
+install(FILES Constants.hpp                     DESTINATION ${HEADERS})
+install(FILES Log.hpp                           DESTINATION ${HEADERS})
+install(FILES Utils.hpp                         DESTINATION ${HEADERS})
+install(FILES records/Record.hpp                DESTINATION ${HEADERS}/records)
+install(FILES records/CreateR.hpp               DESTINATION ${HEADERS}/records)
+install(FILES tor_ipc/TorController.hpp         DESTINATION ${HEADERS}/tor_ipc)
+install(FILES tor_ipc/ClientSocket.hpp          DESTINATION ${HEADERS}/tor_ipc)
+install(FILES tor_ipc/Socket.hpp                DESTINATION ${HEADERS}/tor_ipc)
+install(FILES tor_ipc/SocketException.hpp       DESTINATION ${HEADERS}/tor_ipc)
 
 # install headers for our dependencies
 install(FILES libs/jsoncpp/json/json.h                                DESTINATION ${HEADERS}/json/)
+install(FILES libs/ed25519-donna/ed25519.h                            DESTINATION ${HEADERS}/libs/ed25519-donna)
+install(FILES libs/CyoEncode/CyoEncode.hpp                            DESTINATION ${HEADERS}/CyoEncode)
+install(FILES libs/CyoEncode/CyoEncode.h                              DESTINATION ${HEADERS}/CyoEncode)
+install(FILES libs/CyoEncode/CyoDecode.hpp                            DESTINATION ${HEADERS}/CyoEncode)
+install(FILES libs/CyoEncode/CyoDecode.h                              DESTINATION ${HEADERS}/CyoEncode)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NetworkServerInterface.h    DESTINATION ${HEADERS}/api)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NetworkClient.h             DESTINATION ${HEADERS}/api)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LocalServerInterface.h      DESTINATION ${HEADERS}/api)
