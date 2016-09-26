@@ -5,71 +5,71 @@
 #include "../Constants.hpp"
 #include <botan/botan.h>
 #include <botan/rsa.h>
-#include <json/json.h>
-#include <memory>
-#include <cstdint>
+#include <jsoncpp/json/json.h>
 #include <string>
+#include <vector>
+#include <memory>
 
-typedef std::pair<uint8_t*, size_t> UInt8Array;
-typedef std::vector<std::pair<std::string, std::string> > NameList;
+typedef std::vector<std::pair<std::string, std::string>> StringMap;
 
 class Record
 {
  public:
-  enum WorkStatus
-  {
-    Success,
-    NotFound,
-    Aborted
-  };
+  Record(const std::shared_ptr<Botan::RSA_PrivateKey>&);
+  Record(const Json::Value&);
 
-  Record(Botan::RSA_PublicKey*);
-  Record(Botan::RSA_PrivateKey*);
-  Record(const Record&);
-  virtual ~Record();
-
-  void setName(const std::string&);
-  std::string getName() const;
-
-  void setSubdomains(const NameList&);
-  NameList getSubdomains() const;
-
-  void setContact(const std::string&);
-  std::string getContact() const;
-
-  bool setKey(Botan::RSA_PrivateKey*);
-  UInt8Array getPublicKey() const;
-  std::string getOnion() const;
-  SHA256_HASH getHash() const;
-
-  void makeValid(uint8_t);
-  void computeValidity(bool*);  // updates valid_, with flag to abort work
-  bool isValid() const;
-  bool hasValidSignature() const;
-
-  std::string getType() const;
-  virtual uint32_t getDifficulty() const;
-  virtual Json::Value asJSONObj() const;
-  std::string asJSON() const;
+  // action methods
+  std::string resolve(const std::string&) const;
+  SHA256_HASH computeValue() const;
+  bool computeValidity() const;
+  SHA256_HASH hash() const;
+  void sign();
+  std::string computeOnion() const;
+  Json::Value asJSON() const;
   friend std::ostream& operator<<(std::ostream&, const Record&);
 
- protected:
-  WorkStatus makeValid(uint8_t, uint8_t, bool*);
-  virtual UInt8Array computeCentral();
-  void updateAppendSignature(UInt8Array& buffer);
-  void updateValidity(const UInt8Array& buffer);
+  // set methods
+  void setType(const std::string&);
+  void setName(const std::string&);
+  void setContact(const std::string&);
+  void setSubdomains(const StringMap&);
+  void setSecondaryAddresses(const std::vector<std::string>&);
+  void setPrivateKey(const std::shared_ptr<Botan::RSA_PrivateKey>&);
+
+  // get methods
+  std::string getType() const;
+  std::string getName() const;
+  std::string getContact() const;
+  StringMap getSubdomains() const;
+  std::vector<std::string> getSecondaryAddresses() const;
+  std::shared_ptr<Botan::RSA_PublicKey> getPublicKey() const;
+  UInt8Array getPublicKeyBER() const;
+  RSA_SIGNATURE getSignature() const;
+
+ private:
+  bool verifyStrings() const;
+  bool verifySubdomains() const;
+  bool verifySecondaryAddrs() const;
+  bool verifyKeys() const;
+  bool verifySignature() const;
 
   std::string type_, name_, contact_;
-  NameList subdomains_;
+  StringMap subdomains_;
+  std::vector<std::string> secondaryAddrs_;
+  std::shared_ptr<Botan::RSA_PrivateKey> privateKey_;
+  std::shared_ptr<Botan::RSA_PublicKey> publicKey_;
+  RSA_SIGNATURE signature_;
+  // missing beacon, missing a validity/proper flag?
 
-  Botan::RSA_PrivateKey* privateKey_;
-  Botan::RSA_PublicKey* publicKey_;
-
-  std::array<uint8_t, Const::RECORD_NONCE_LEN> nonce_;
-  std::array<uint8_t, Const::SIGNATURE_LEN> signature_;
-  bool valid_, validSig_;
+  /*
+    //cached objects
+    std::array<uint8_t, Const::SHA1_LEN> onion_;
+    std::array<uint8_t, Const::SIGNATURE_LEN> signature_;
+    bool onionFresh_, sigFresh_;
+    //std::shared_ptr<Botan::RSA_PublicKey> publicKey_;
+    //std::pair<uint8_t*, size_t> getData();
+    //std::array<uint8_t, Const::RECORD_NONCE_LEN> nonce_;
+    */
 };
-
-typedef std::shared_ptr<Record> RecordPtr;
 
 #endif
