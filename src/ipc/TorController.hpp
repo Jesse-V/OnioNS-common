@@ -2,7 +2,7 @@
 #ifndef TOR_CONTROLLER_HPP
 #define TOR_CONTROLLER_HPP
 
-#include "ClientSocket.hpp"
+#include "jsonrpccpp/client/connectors/tcpsocketclient.h"
 #include <memory>
 #include <string>
 
@@ -17,13 +17,12 @@ class TorController
   bool setSetting(const std::string&, const std::string&);
   std::string getSetting(const std::string&);
   std::string getCookiePath();
-  std::shared_ptr<ClientSocket> getSocket() const;
+  std::shared_ptr<jsonrpc::TcpSocketClient> getClientSocket() const;
   std::string getPassword();
 
  private:
   std::string getCookieHash(const std::string&);
-
-  std::shared_ptr<ClientSocket> socket_;
+  std::shared_ptr<jsonrpc::TcpSocketClient> client_;
 };
 
 #endif

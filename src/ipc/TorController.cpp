@@ -2,22 +2,19 @@
 #include "TorController.hpp"
 #include "../Log.hpp"
 #include "../Utils.hpp"
-#include "../Common.hpp"
-#include "SocketException.hpp"
 #include <botan/hex_filt.h>
 #include <botan/pipe.h>
 #include <thread>
 #include <chrono>
 
 
-TorController::TorController(const std::string& ip, short controlPort)
-    : socket_(std::make_shared<ClientSocket>(ip, controlPort))
-// could throw an exception
+TorController::TorController(const std::string& host, short controlPort)
+    : client_(std::make_shared<jsonrpc::TcpSocketClient>(host, controlPort))
 {
 }
 
 
-
+/*
 bool TorController::authenticateToTor(bool usePassword)
 {
   std::string auth =
@@ -164,7 +161,7 @@ std::string TorController::getCookieHash(const std::string& path)
 
 std::string TorController::getPassword()
 {
-  std::string path = Common::getWorkingDirectory() + "control.auth_pw";
+  std::string path = Utils::getWorkingDirectory() + "control.auth_pw";
   Log::get().notice("Reading controller password from " + path);
 
   std::ifstream pwFile(path);
@@ -181,4 +178,4 @@ std::string TorController::getPassword()
 std::shared_ptr<ClientSocket> TorController::getSocket() const
 {
   return socket_;
-}
+}*/
