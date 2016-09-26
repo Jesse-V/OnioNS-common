@@ -1,6 +1,6 @@
 
-#ifndef TOR_CONTROLLER_HPP
-#define TOR_CONTROLLER_HPP
+#ifndef CLIENT_SOCKET_HPP
+#define CLIENT_SOCKET_HPP
 
 #include "jsonrpccpp/client/connectors/linuxtcpsocketclient.h"
 

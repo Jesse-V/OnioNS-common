@@ -9,12 +9,12 @@
 
 
 TorController::TorController(const std::string& host, short controlPort)
-    : client_(std::make_shared<jsonrpc::TcpSocketClient>(host, controlPort))
+    : socket_(std::make_shared<ClientSocket>(host, controlPort))
 {
 }
 
 
-/*
+
 bool TorController::authenticateToTor(bool usePassword)
 {
   std::string auth =
@@ -129,10 +129,10 @@ std::string TorController::getCookiePath()
     std::size_t pathEnd = response.find("\"", pathBegin);
     return response.substr(pathBegin, pathEnd - pathBegin);
   }
-  catch (SocketException& e)
+  catch (jsonrpc::JsonRpcException& e)
   {
     Log::get().warn("Could not connect to Tor's control port! " +
-                    e.description());
+                    e.GetMessage());
   }
 
   return "";
@@ -175,7 +175,7 @@ std::string TorController::getPassword()
 
 
 
-std::shared_ptr<ClientSocket> TorController::getSocket() const
+std::shared_ptr<ClientSocket> TorController::getClientSocket() const
 {
   return socket_;
-}*/
+}
