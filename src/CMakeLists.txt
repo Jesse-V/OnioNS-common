@@ -23,22 +23,12 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_CXX_FLAGS_DEBUG "${GCC_DEBUG}")
 endif()
 
-# define special compile flags for JsonCpp
-#https://stackoverflow.com/questions/13638408/cmake-override-compile-flags-for-single-files
-SET(JSONCPP_CPP libs/jsoncpp/jsoncpp.cpp)
-set_source_files_properties(${JSONCPP_CPP} PROPERTIES COMPILE_FLAGS -w)
-
-# define our JsonCpp target
-add_library(onions-jsoncpp SHARED
-  ${JSONCPP_CPP}
-)
-
 # define our JSON-RPC library
 add_custom_target(onions-json-rpc # I could make this a separate package, but this works
   COMMAND # do an out-of-source build
     mkdir -p build &&
     cd build &&
-    cmake -DJSONCPP_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/libs/jsoncpp -DJSONCPP_LIBRARY=${CMAKE_CURRENT_BINARY_DIR}/libonions-jsoncpp.so -DCOMPILE_TESTS=NO -DCOMPILE_EXAMPLES=NO -DUNIX_DOMAIN_SOCKET_SERVER=NO -DUNIX_DOMAIN_SOCKET_CLIENT=NO -DCATCH_INCLUDE_DIR=/tmp .. &&
+    cmake -DCOMPILE_TESTS=NO -DCOMPILE_EXAMPLES=NO -DUNIX_DOMAIN_SOCKET_SERVER=NO -DUNIX_DOMAIN_SOCKET_CLIENT=NO -DCATCH_INCLUDE_DIR=/tmp .. &&
     make -j 2
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/
   VERBATIM
@@ -57,43 +47,27 @@ add_custom_target(onions-api
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-# define the CyoEncode library for base32 encoding
-add_library(onions-cyoencode SHARED
-  libs/CyoEncode/CyoDecode.c
-  libs/CyoEncode/CyoEncode.c
-)
-
 # define sources for our main target
 add_library(onions-common SHARED
-  Common.cpp
   Config.cpp
   Log.cpp
   Utils.cpp
-
   records/Record.cpp
-  records/CreateR.cpp
-
-  bitcoin/HttpGet.cpp
-
-  tor_ipc/TorController.cpp
-  tor_ipc/ClientSocket.cpp
-  tor_ipc/Socket.cpp
-
-  libs/ed25519-donna/ed25519.cpp
+  records/TransferRecord.cpp
+  beacon/HttpGet.cpp
+  ipc/TorController.cpp
+  ipc/ClientSocket.cpp
 )
 
 # define our chain of dependencies
-add_dependencies(onions-json-rpc onions-jsoncpp)
 add_dependencies(onions-api onions-json-rpc)
-add_dependencies(onions-common onions-json-rpc onions-api onions-cyoencode)
+add_dependencies(onions-common onions-json-rpc onions-api)
 
 # set library versions so that sonames are properly set
 set_target_properties(onions-common     PROPERTIES VERSION ${MAJOR_VERSION}.${MINOR_VERSION})
-set_target_properties(onions-jsoncpp    PROPERTIES VERSION 1.7.3)
-set_target_properties(onions-cyoencode  PROPERTIES VERSION 1.1.1)
 
 # set the list of directories that contain headers
-include_directories(libs libs/jsoncpp /usr/include/botan-1.10)
+include_directories(libs libs/libjson-rpc-cpp/src/ libs/libjson-rpc-cpp/build/gen/jsonrpccpp/common /usr/include/botan-1.10)
 
 # set the INSTALL_PREFIX pre-processor directive, distinguishes /usr/bin/ from /usr/local/bin/
 add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\))
@@ -108,8 +82,6 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf ${CMAKE_INSTALL_PREFIX
 # install libraries
 SET(JSONRPC_LIB "libs/libjson-rpc-cpp/build/lib")
 install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
-install(TARGETS onions-jsoncpp    LIBRARY  DESTINATION lib/onions-common/)
-install(TARGETS onions-cyoencode  LIBRARY  DESTINATION lib/onions-common/)
 install(FILES
   ${JSONRPC_LIB}/libjsonrpccpp-common.so
   ${JSONRPC_LIB}/libjsonrpccpp-common.so.0
@@ -132,19 +104,10 @@ install(FILES Constants.hpp                     DESTINATION ${HEADERS})
 install(FILES Log.hpp                           DESTINATION ${HEADERS})
 install(FILES Utils.hpp                         DESTINATION ${HEADERS})
 install(FILES records/Record.hpp                DESTINATION ${HEADERS}/records)
-install(FILES records/CreateR.hpp               DESTINATION ${HEADERS}/records)
-install(FILES tor_ipc/TorController.hpp         DESTINATION ${HEADERS}/tor_ipc)
-install(FILES tor_ipc/ClientSocket.hpp          DESTINATION ${HEADERS}/tor_ipc)
-install(FILES tor_ipc/Socket.hpp                DESTINATION ${HEADERS}/tor_ipc)
-install(FILES tor_ipc/SocketException.hpp       DESTINATION ${HEADERS}/tor_ipc)
+install(FILES records/TransferRecord.hpp        DESTINATION ${HEADERS}/records)
+install(FILES TorController.hpp                 DESTINATION ${HEADERS}/tor_ipc)
 
 # install headers for our dependencies
-install(FILES libs/jsoncpp/json/json.h                                DESTINATION ${HEADERS}/json/)
-install(FILES libs/ed25519-donna/ed25519.h                            DESTINATION ${HEADERS}/libs/ed25519-donna)
-install(FILES libs/CyoEncode/CyoEncode.hpp                            DESTINATION ${HEADERS}/CyoEncode)
-install(FILES libs/CyoEncode/CyoEncode.h                              DESTINATION ${HEADERS}/CyoEncode)
-install(FILES libs/CyoEncode/CyoDecode.hpp                            DESTINATION ${HEADERS}/CyoEncode)
-install(FILES libs/CyoEncode/CyoDecode.h                              DESTINATION ${HEADERS}/CyoEncode)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NetworkServerInterface.h    DESTINATION ${HEADERS}/api)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NetworkClient.h             DESTINATION ${HEADERS}/api)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LocalServerInterface.h      DESTINATION ${HEADERS}/api)
