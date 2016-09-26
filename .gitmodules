@@ -2,3 +2,6 @@
 	path = src/libs/libjson-rpc-cpp
 	url = https://github.com/Jesse-V/libjson-rpc-cpp
 	branch = socks5
+[submodule "src/libs/cppcodec"]
+	path = src/libs/cppcodec
+	url = https://github.com/tplgy/cppcodec.git
