@@ -3,15 +3,12 @@
 #define CONFIG_HPP
 
 #include <string>
-#include <json/json.h>
+#include <jsoncpp/json/json.h>
 
 class Config
-{
- public:
-  static Json::Value getQuorumNode();
-  static Json::Value getMirror();
+{  // should be Singleton?
 
- private:
+ public:
   static Json::Value loadFile(const std::string&);
 };
 

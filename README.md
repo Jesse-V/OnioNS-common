@@ -37,9 +37,9 @@ You can find Debian packages in [Releases section](https://github.com/Jesse-V/On
 
 > 2. Install the dependencies.
 
->> Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libbotan1.10-dev libcurl4-openssl-dev libargtable2-dev libmicrohttpd-dev**
+>> Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libbotan1.10-dev libjsoncpp-dev libcurl4-openssl-dev libargtable2-dev libmicrohttpd-dev**
 
->> Fedora: **yum install g++ cmake botan-devel libcurl-devel argtable-devel libmicrohttpd-devel**
+>> Fedora: **yum install g++ cmake botan-devel libjsoncpp-devel libcurl-devel argtable-devel libmicrohttpd-devel**
 
 Note: this software does not have a dependency on OpenSSL or use any crypto code in libcurl. You can install whichever libcurl flavor you like.
 

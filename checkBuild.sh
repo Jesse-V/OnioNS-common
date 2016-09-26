@@ -36,7 +36,7 @@ if (scan-build-3.8 -maxloop 16 -enable-checker core -enable-checker cplusplus -d
     echo "Additional static analysis...        ----------------------------------------------"
     cd ..
 
-    find src -type f -follow -print | grep -F -v "src/libs" | grep -E "\.h|\.c" | cppcheck -i "src/spec/rpc_spec.json" --enable=all --platform=unix64 --inconclusive --file-list=-
+    find src -type f -follow -print | grep -E "\.h|\.c" | cppcheck -i "src/spec/rpc_spec.json" --enable=all --platform=unix64 --inconclusive --file-list=-
 
     echo "Success: compilation and scan-build check successful!"
   fi
