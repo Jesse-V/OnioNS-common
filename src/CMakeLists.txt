@@ -98,14 +98,14 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf DESTINATION /etc/ld
 
 # install main headers
 set(HEADERS "include/onions-common/")
-install(FILES Common.hpp                        DESTINATION ${HEADERS})
 install(FILES Config.hpp                        DESTINATION ${HEADERS})
 install(FILES Constants.hpp                     DESTINATION ${HEADERS})
 install(FILES Log.hpp                           DESTINATION ${HEADERS})
 install(FILES Utils.hpp                         DESTINATION ${HEADERS})
 install(FILES records/Record.hpp                DESTINATION ${HEADERS}/records)
 install(FILES records/TransferRecord.hpp        DESTINATION ${HEADERS}/records)
-install(FILES TorController.hpp                 DESTINATION ${HEADERS}/tor_ipc)
+install(FILES ipc/TorController.hpp             DESTINATION ${HEADERS}/ipc)
+install(FILES ipc/ClientSocket.hpp              DESTINATION ${HEADERS}/ipc)
 
 # install headers for our dependencies
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NetworkServerInterface.h    DESTINATION ${HEADERS}/api)
@@ -126,7 +126,9 @@ install(FILES ${JSONRPC_BASE}/client/client.h                       DESTINATION 
 install(FILES ${JSONRPC_BASE}/client/iclientconnector.h             DESTINATION ${HEADERS}/jsonrpccpp/client)
 install(FILES ${JSONRPC_BASE}/client/batchcall.h                    DESTINATION ${HEADERS}/jsonrpccpp/client)
 install(FILES ${JSONRPC_BASE}/client/batchresponse.h                DESTINATION ${HEADERS}/jsonrpccpp/client)
-install(FILES ${JSONRPC_BASE}/client/connectors/socks5client.h      DESTINATION ${HEADERS}/jsonrpccpp/client/connectors)
+install(FILES ${JSONRPC_BASE}/client/connectors/socks5client.h              DESTINATION ${HEADERS}/jsonrpccpp/client/connectors)
+install(FILES ${JSONRPC_BASE}/client/connectors/linuxtcpsocketclient.h      DESTINATION ${HEADERS}/jsonrpccpp/client/connectors)
+install(FILES ${JSONRPC_BASE}/client/connectors/tcpsocketclientprivate.h    DESTINATION ${HEADERS}/jsonrpccpp/client/connectors)
 install(FILES ${JSONRPC_BASE}/server/abstractserver.h               DESTINATION ${HEADERS}/jsonrpccpp/server)
 install(FILES ${JSONRPC_BASE}/server/abstractserverconnector.h      DESTINATION ${HEADERS}/jsonrpccpp/server)
 install(FILES ${JSONRPC_BASE}/server/iclientconnectionhandler.h     DESTINATION ${HEADERS}/jsonrpccpp/server)
