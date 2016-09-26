@@ -4,41 +4,27 @@
 #include <botan/pem.h>
 #include <botan/base64.h>
 #include <botan/auto_rng.h>
-#include <cstdio>
-#include <stdexcept>
+//#include <cstdio>
+//#include <stdexcept>
 #include <sstream>
+#include <sys/stat.h>
 
 
-// https://stackoverflow.com/questions/6855115/byte-array-to-int-c
-uint32_t Utils::arrayToUInt32(const uint8_t* byteArray, int32_t offset)
-{
-  return *reinterpret_cast<const uint32_t*>(&byteArray[offset]);
-}
+std::vector<std::string> Utils::split(const char* str, char c)
+{  // https://stackoverflow.com/questions/53849
 
+  std::vector<std::string> result;
 
+  do
+  {
+    const char* begin = str;
+    while (*str != c && *str)
+      str++;
 
-char* Utils::getAsHex(const uint8_t* data, int len)
-{
-  char* hexStr = new char[len * 2 + 3];
-  hexStr[0] = '0';
-  hexStr[1] = 'x';
-  for (int i = 0; i < len; i++)
-    sprintf(&hexStr[i * 2 + 2], "%02x", data[i]);
-  return hexStr;
-}
+    result.push_back(std::string(begin, str));
+  } while (0 != *str++);
 
-
-
-bool Utils::isPowerOfTwo(std::size_t x)
-{  // glibc method of checking
-  return ((x != 0) && !(x & (x - 1)));
-}
-
-
-
-unsigned long Utils::decode64Estimation(unsigned long inSize)
-{  // https://stackoverflow.com/questions/1533113/calculate-the-size-to-a-base-64-encoded-message
-  return ((inSize * 4) / 3) + (inSize / 96) + 6;
+  return result;
 }
 
 
@@ -93,22 +79,44 @@ std::string Utils::trimString(const std::string& str)
 
 
 
-Botan::RSA_PublicKey* Utils::base64ToRSA(const std::string& base64)
+std::shared_ptr<Botan::RSA_PublicKey> Utils::BER64toRSA(const std::string& b64)
 {
   // decode public key
-  unsigned long expectedSize = decode64Estimation(base64.length());
-  uint8_t* keyBuffer = new uint8_t[expectedSize];
-  size_t len = Botan::base64_decode(keyBuffer, base64, false);
+  const auto eSize = decode64Size(b64.length());
+  uint8_t* buffer = new uint8_t[eSize];
+  size_t len = Botan::base64_decode(buffer, b64, false);
 
   // interpret and parse into public RSA key
-  std::istringstream iss(std::string(reinterpret_cast<char*>(keyBuffer), len));
+  std::string str(reinterpret_cast<const char*>(buffer), len);
+  std::istringstream iss(str);
   Botan::DataSource_Stream keyStream(iss);
-  return dynamic_cast<Botan::RSA_PublicKey*>(Botan::X509::load_key(keyStream));
+  return std::make_shared<Botan::RSA_PublicKey>(
+      *dynamic_cast<Botan::RSA_PublicKey*>(Botan::X509::load_key(keyStream)));
 }
 
 
 
-Botan::RSA_PrivateKey* Utils::loadKey(const std::string& filename)
+RSA_SIGNATURE Utils::decodeSignature(const std::string& b64)
+{
+  const auto eSize = Utils::decode64Size(b64.size());
+  uint8_t* buffer = new uint8_t[eSize];
+  size_t len = Botan::base64_decode(buffer, b64, false);
+
+  RSA_SIGNATURE sig;
+  if (len == Const::RSA_SIGNATURE_LEN)
+    memcpy(sig.data(), buffer, Const::RSA_SIGNATURE_LEN);
+  else
+    Log::get().warn("Record signature decoded to " + std::to_string(len) +
+                    " bytes, expected 128.");
+
+  memset(sig.data(), 0, Const::RSA_SIGNATURE_LEN);
+  return sig;
+}
+
+
+
+std::shared_ptr<Botan::RSA_PrivateKey> Utils::loadKey(
+    const std::string& filename)
 {
   static Botan::AutoSeeded_RNG rng;
 
@@ -117,18 +125,18 @@ Botan::RSA_PrivateKey* Utils::loadKey(const std::string& filename)
     // attempt reading key as standardized PKCS8 format
     Log::get().notice("Opening HS key... ");
 
-    auto pvtKey = Botan::PKCS8::load_key(filename, rng);
-    auto rsaKey = dynamic_cast<Botan::RSA_PrivateKey*>(pvtKey);
+    auto key = Botan::PKCS8::load_key(filename, rng);
+    auto rsaKey = dynamic_cast<Botan::RSA_PrivateKey*>(key);
     if (!rsaKey)
       Log::get().error("The loaded key is not a RSA key!");
 
     Log::get().notice("Read PKCS8-formatted RSA key.");
-    return rsaKey;
+    return std::make_shared<Botan::RSA_PrivateKey>(*rsaKey);
   }
   catch (const Botan::Decoding_Error&)
   {
     Log::get().notice("Read OpenSSL-formatted RSA key.");
-    return Utils::loadOpenSSLRSA(filename, rng);
+    return Utils::loadOpenSSLRSA(filename);
   }
   catch (const Botan::Stream_IO_Error& err)
   {
@@ -143,11 +151,11 @@ Botan::RSA_PrivateKey* Utils::loadKey(const std::string& filename)
 // http://botan.randombit.net/faq.html#how-do-i-load-this-key-generated-by-openssl-into-botan
 // http://lists.randombit.net/pipermail/botan-devel/2010-June/001157.html
 // http://lists.randombit.net/pipermail/botan-devel/attachments/20100611/1d8d870a/attachment.cpp
-Botan::RSA_PrivateKey* Utils::loadOpenSSLRSA(const std::string& filename,
-                                             Botan::RandomNumberGenerator& rng)
+std::shared_ptr<Botan::RSA_PrivateKey> Utils::loadOpenSSLRSA(
+    const std::string& filename)
 {
+  static Botan::AutoSeeded_RNG rng;
   Botan::DataSource_Stream in(filename);
-
   Botan::DataSource_Memory key_bits(
       Botan::PEM_Code::decode_check_label(in, "RSA PRIVATE KEY"));
 
@@ -166,53 +174,27 @@ Botan::RSA_PrivateKey* Utils::loadOpenSSLRSA(const std::string& filename,
 
   if (version != 0)
     return NULL;
-
-  return new Botan::RSA_PrivateKey(rng, p, q, e, d, n);
+  return std::make_shared<Botan::RSA_PrivateKey>(rng, p, q, e, d, n);
 }
 
 
 
-// This function assumes src to be a zero terminated sanitized string with
-// an even number of [0-9a-f] characters, and target to be sufficiently large
-void Utils::hex2bin(const uint8_t* src, uint8_t* target)
-{  // https://stackoverflow.com/questions/17261798/
-  while (*src && src[1])
-  {
-    *(target++) = char2int(*src) * 16 + char2int(src[1]);
-    src += 2;
-  }
-}
-
-
-
-uint8_t Utils::char2int(const uint8_t c)
+std::string Utils::getWorkingDirectory()
 {
-  if (c >= '0' && c <= '9')
-    return c - '0';
-  if (c >= 'A' && c <= 'F')
-    return c - 'A' + 10;
-  if (c >= 'a' && c <= 'f')
-    return c - 'a' + 10;
+  // std::string workingDir(getpwuid(getuid())->pw_dir);
+  // workingDir += "/.OnioNS/";
 
-  Log::get().error("Invalid character");
-  return 0;
+  std::string workingDir = ".OnioNS";
+
+  if (mkdir(workingDir.c_str(), 0750) == 0)
+    Log::get().notice("Working directory successfully created.");
+
+  return workingDir;
 }
 
 
 
-std::vector<std::string> Utils::split(const char* str, char c)
-{  // https://stackoverflow.com/questions/53849
-
-  std::vector<std::string> result;
-
-  do
-  {
-    const char* begin = str;
-    while (*str != c && *str)
-      str++;
-
-    result.push_back(std::string(begin, str));
-  } while (0 != *str++);
-
-  return result;
+unsigned long Utils::decode64Size(size_t inSize)
+{  // https://stackoverflow.com/questions/1533113/
+  return ((inSize * 4) / 3) + (inSize / 96) + 6;
 }
