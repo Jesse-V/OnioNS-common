@@ -60,16 +60,9 @@ class Record
   std::shared_ptr<Botan::RSA_PublicKey> publicKey_;
   RSA_SIGNATURE signature_;
   // missing beacon, missing a validity/proper flag?
-
-  /*
-    //cached objects
-    std::array<uint8_t, Const::SHA1_LEN> onion_;
-    std::array<uint8_t, Const::SIGNATURE_LEN> signature_;
-    bool onionFresh_, sigFresh_;
-    //std::shared_ptr<Botan::RSA_PublicKey> publicKey_;
-    //std::pair<uint8_t*, size_t> getData();
-    //std::array<uint8_t, Const::RECORD_NONCE_LEN> nonce_;
-    */
 };
+
+
+typedef std::shared_ptr<Record> RecordPtr;
 
 #endif
