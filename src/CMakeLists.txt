@@ -28,7 +28,7 @@ add_custom_target(onions-json-rpc # I could make this a separate package, but th
   COMMAND # do an out-of-source build
     mkdir -p build &&
     cd build &&
-    cmake -DCOMPILE_TESTS=NO -DCOMPILE_EXAMPLES=NO -DUNIX_DOMAIN_SOCKET_SERVER=NO -DUNIX_DOMAIN_SOCKET_CLIENT=NO -DCATCH_INCLUDE_DIR=/tmp .. &&
+    cmake -DTCP_SOCKET_CLIENT=YES -DCOMPILE_TESTS=NO -DCOMPILE_EXAMPLES=NO -DUNIX_DOMAIN_SOCKET_SERVER=NO -DUNIX_DOMAIN_SOCKET_CLIENT=NO -DCATCH_INCLUDE_DIR=/tmp .. &&
     make -j 2
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/
   VERBATIM
@@ -135,6 +135,17 @@ install(FILES ${JSONRPC_BASE}/server/iclientconnectionhandler.h     DESTINATION 
 install(FILES ${JSONRPC_BASE}/server/iprocedureinvokationhandler.h  DESTINATION ${HEADERS}/jsonrpccpp/server)
 install(FILES ${JSONRPC_BASE}/server/requesthandlerfactory.h        DESTINATION ${HEADERS}/jsonrpccpp/server)
 install(FILES ${JSONRPC_BASE}/server/connectors/httpserver.h        DESTINATION ${HEADERS}/jsonrpccpp/server/connectors)
+
+#install encoding library
+install(FILES libs/cppcodec/cppcodec/parse_error.hpp        DESTINATION ${HEADERS}/cppcodec)
+install(FILES libs/cppcodec/cppcodec/base32_default_rfc4648.hpp        DESTINATION ${HEADERS}/cppcodec)
+install(FILES libs/cppcodec/cppcodec/base32_rfc4648.hpp        DESTINATION ${HEADERS}/cppcodec)
+install(FILES libs/cppcodec/cppcodec/detail/base32.hpp        DESTINATION ${HEADERS}/cppcodec/detail)
+install(FILES libs/cppcodec/cppcodec/detail/codec.hpp        DESTINATION ${HEADERS}/cppcodec/detail)
+install(FILES libs/cppcodec/cppcodec/detail/stream_codec.hpp        DESTINATION ${HEADERS}/cppcodec/detail)
+install(FILES libs/cppcodec/cppcodec/detail/config.hpp        DESTINATION ${HEADERS}/cppcodec/detail)
+install(FILES libs/cppcodec/cppcodec/data/access.hpp        DESTINATION ${HEADERS}/cppcodec/data)
+install(FILES libs/cppcodec/cppcodec/data/raw_result_buffer.hpp        DESTINATION ${HEADERS}/cppcodec/data)
 
 # setup uninstall target (use libjson-rpc-cpp's uninstall method)
 configure_file(
