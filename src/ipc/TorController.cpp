@@ -129,10 +129,10 @@ std::string TorController::getCookiePath()
     std::size_t pathEnd = response.find("\"", pathBegin);
     return response.substr(pathBegin, pathEnd - pathBegin);
   }
-  catch (jsonrpc::JsonRpcException& e)
+  catch (std::runtime_error& e)
   {
     Log::get().warn("Could not connect to Tor's control port! " +
-                    e.GetMessage());
+                    std::string(e.what()));
   }
 
   return "";

@@ -77,8 +77,7 @@ const ClientSocket& ClientSocket::operator<<(const std::string& str) const
           break;
       }
 
-      throw jsonrpc::JsonRpcException(jsonrpc::Errors::ERROR_CLIENT_CONNECTOR,
-                                      message);
+      throw std::runtime_error(message);
     }
     else if (static_cast<size_t>(byteWritten) < toSend.size())
     {
@@ -121,8 +120,7 @@ const ClientSocket& ClientSocket::operator>>(std::string& result) const
           break;
       }
 
-      throw jsonrpc::JsonRpcException(jsonrpc::Errors::ERROR_CLIENT_CONNECTOR,
-                                      message);
+      throw std::runtime_error(message);
     }
     else
     {
