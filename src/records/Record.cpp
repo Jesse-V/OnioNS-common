@@ -13,9 +13,9 @@
 Record::Record(const Json::Value& json)  // reciprocal of asJSON
 {
   // zero variables by default
-  edKey_->fill(0);
-  edSig_->fill(0);
-  serviceSig_->fill(0);
+  edKey_.fill(0);
+  edSig_.fill(0);
+  serviceSig_.fill(0);
   serviceKey_ = nullptr;
   nonce_ = rng_ = 0;
 
@@ -23,14 +23,14 @@ Record::Record(const Json::Value& json)  // reciprocal of asJSON
   {
     auto bytes =
         Utils::decodeBase64(json["edKey"].asString(), Const::EdDSA_KEY_LEN);
-    std::copy(bytes.begin(), bytes.end(), edKey_->begin());
+    std::copy(bytes.begin(), bytes.end(), edKey_.begin());
   }
 
   if (json.isMember("edSig"))
   {
     auto bytes =
         Utils::decodeBase64(json["edSig"].asString(), Const::EdDSA_SIG_LEN);
-    std::copy(bytes.begin(), bytes.end(), edSig_->begin());
+    std::copy(bytes.begin(), bytes.end(), edSig_.begin());
   }
 
   if (json.isMember("rsaKey"))
@@ -53,7 +53,7 @@ Record::Record(const Json::Value& json)  // reciprocal of asJSON
   {
     auto bytes =
         Utils::decodeBase64(json["rsaSig"].asString(), Const::RSA_SIG_LEN);
-    std::copy(bytes.begin(), bytes.end(), serviceSig_->begin());
+    std::copy(bytes.begin(), bytes.end(), serviceSig_.begin());
   }
 
   if (json.isMember("type"))
@@ -122,9 +122,9 @@ Record::Record(const std::string& type,
       rng_(rng),
       nonce_(nonce)
 {
-  edKey_->fill(0);
-  edSig_->fill(0);
-  serviceSig_->fill(0);
+  edKey_.fill(0);
+  edSig_.fill(0);
+  serviceSig_.fill(0);
   serviceKey_ = nullptr;
 }
 
@@ -155,6 +155,12 @@ std::string Record::resolve(const std::string& source) const
 // used to uniquely identify the record
 Botan::SecureVector<uint8_t> Record::hash() const
 {
+  if (!serviceKey_)
+  {
+    Botan::SecureVector<uint8_t> empty(Const::SHA256_LEN);
+    return empty;
+  }
+
   Botan::SHA_256 sha;
   auto bytes = asBytes();
   return sha.process(Botan::MemoryVector<uint8_t>(bytes.data(), bytes.size()));
@@ -176,6 +182,9 @@ uint32_t Record::computePOW(const std::vector<uint8_t>& bytes) const
 
 bool Record::computeValidity() const
 {
+  if (!serviceKey_)  // test if the Record is incompletely created
+    return false;
+
   // thanks to the PoPETS reviewer who suggested checking PoW first to avoid DoS
   return verifyPOW() && verifyEdDSA() && verifyServiceKey() &&
          verifyServiceSig() && verifyRNG() && verifySubdomains() &&
@@ -189,6 +198,9 @@ std::string Record::computeOnion() const
   // https://gitweb.torproject.org/torspec.git/tree/tor-spec.txt :
   // When we refer to "the hash of a public key", we mean the SHA-1 hash of the
   // DER encoding of an ASN.1 RSA public key (as specified in PKCS.1).
+
+  if (!serviceKey_)
+    return "";
 
   // perform SHA-1 of DER encoding of RSA key
   Botan::SHA_160 sha1;
@@ -208,8 +220,10 @@ std::string Record::computeOnion() const
 // last four bytes is the nonce
 std::vector<uint8_t> Record::asBytes(bool forSigning) const
 {
-  std::vector<uint8_t> bytes;
-  bytes.reserve(1024);
+  std::vector<uint8_t> bytes(1024);
+
+  if (!serviceKey_)  // test if Record is incompletely created
+    return bytes;
 
   bytes.insert(bytes.end(), type_.begin(), type_.end());
   bytes.insert(bytes.end(), name_.begin(), name_.end());
@@ -223,12 +237,12 @@ std::vector<uint8_t> Record::asBytes(bool forSigning) const
 
   auto ber = getServicePublicKeyBER();
   bytes.insert(bytes.end(), ber.begin(), ber.end());
-  bytes.insert(bytes.end(), edKey_->begin(), edKey_->end());
+  bytes.insert(bytes.end(), edKey_.begin(), edKey_.end());
 
   if (!forSigning)
   {  // include EdDSA and RSA signatures
-    bytes.insert(bytes.end(), edSig_->begin(), edSig_->end());
-    bytes.insert(bytes.end(), serviceSig_->begin(), serviceSig_->end());
+    bytes.insert(bytes.end(), edSig_.begin(), edSig_.end());
+    bytes.insert(bytes.end(), serviceSig_.begin(), serviceSig_.end());
   }
 
   // add numbers
@@ -248,10 +262,11 @@ Json::Value Record::asJSON() const
   Json::Value obj;
 
   // add keys
-  obj["edKey"] = Botan::base64_encode(edKey_->data(), Const::EdDSA_KEY_LEN);
-  obj["edSig"] = Botan::base64_encode(edSig_->data(), Const::EdDSA_SIG_LEN);
-  obj["rsaKey"] = Botan::base64_encode(getServicePublicKeyBER());
-  obj["rsaSig"] = Botan::base64_encode(serviceSig_->data(), Const::RSA_SIG_LEN);
+  obj["edKey"] = Botan::base64_encode(edKey_.data(), Const::EdDSA_KEY_LEN);
+  obj["edSig"] = Botan::base64_encode(edSig_.data(), Const::EdDSA_SIG_LEN);
+  obj["rsaSig"] = Botan::base64_encode(serviceSig_.data(), Const::RSA_SIG_LEN);
+  if (serviceKey_)
+    obj["rsaKey"] = Botan::base64_encode(getServicePublicKeyBER());
 
   // add various
   obj["type"] = type_;
@@ -274,43 +289,61 @@ std::ostream& operator<<(std::ostream& os, const Record& r)
 {
   bool valid = r.computeValidity();
   std::string onion = r.computeOnion();
+  if (onion.empty())
+    onion = "<unknown>";
 
   os << r.type_ << " record: (currently " << (valid ? "VALID)" : "INVALID)")
-     << std::endl
      << std::endl;
 
   os << "  Domain Information: " << std::endl;
   os << "    " << r.name_ << " -> " << onion << std::endl;
-  for (auto subd : r.subdomains_)
-    os << "      " << subd.first << "." << r.name_ << " -> " << subd.second
-       << std::endl
-       << std::endl;
 
-  os << "    Onion service key: ";
-  auto pem = Botan::X509::PEM_encode(*r.serviceKey_);
-  pem.pop_back();
-  Utils::stringReplace(pem, "\n", "\n\t");
-  os << "      RSA Public Key: \n\t" << pem;
+  if (r.subdomains_.empty())
+    os << "    No subdomains" << std::endl;
+  else
+    for (auto subd : r.subdomains_)
+      os << "    " << subd.first << "." << r.name_ << " -> " << subd.second
+         << std::endl;
 
-  os << "    Onion service signature: ";
-  os << Botan::base64_encode(r.serviceSig_->data(), r.serviceSig_->size() / 4)
+  os << "    Onion key: ";
+  if (r.serviceKey_)
+  {
+    auto pem = Botan::X509::PEM_encode(*r.serviceKey_);
+    pem.pop_back();
+    Utils::stringReplace(pem, "\n", "\n\t");
+    os << "      \n\t" << pem;
+  }
+  else
+    os << "      Missing!" << std::endl;
+
+  os << "    Onion signature: ";
+  os << Botan::base64_encode(r.serviceSig_.data(), r.serviceSig_.size() / 4)
      << " ..." << std::endl;
 
   os << "  Owner: " << std::endl;
   os << "    Key: "
-     << Botan::base64_encode(r.edKey_->data(), Const::EdDSA_KEY_LEN)
+     << Botan::base64_encode(r.edKey_.data(), Const::EdDSA_KEY_LEN)
      << std::endl;
   os << "    Signature: "
-     << Botan::base64_encode(r.edSig_->data(), Const::EdDSA_SIG_LEN)
+     << Botan::base64_encode(r.edSig_.data(), Const::EdDSA_SIG_LEN)
      << std::endl;
-  if (r.contact_.empty())
-    os << "    Contact: PGP 0x" << r.contact_ << std::endl << std::endl;
+
+  if (!r.contact_.empty())
+    os << "    Contact: PGP 0x" << r.contact_ << std::endl;
+  else
+    os << "    Contact: <not present>" << std::endl;
 
   os << "  Validation:" << std::endl;
-  os << "    Proof of Work: " << r.computePOW(r.asBytes())
-     << (r.verifyPOW() ? " (valid)" : " (invalid)") << std::endl;
+
+  os << "    Proof of Work:";
+  if (r.serviceKey_)
+    os << " " << r.computePOW(r.asBytes());
+  os << (r.verifyPOW() ? " (valid)" : " (invalid)") << std::endl;
+
   os << "    Nonce: " << r.nonce_ << std::endl;
-  os << "    Quorum tag: " << r.rng_;
+  os << "    Quorum tag: " << r.rng_ << std::endl;
+
+  os << "  ID: " << Botan::base64_encode(r.hash()) << std::endl;
 
   return os;
 }
@@ -325,7 +358,7 @@ bool Record::verifyEdDSA() const
 {  // edDSA signature - edDSA key, name, destinations, data, nonce
   auto bin = asBytes(true);
   switch (
-      ed25519_sign_open(bin.data(), bin.size(), edKey_->data(), edSig_->data()))
+      ed25519_sign_open(bin.data(), bin.size(), edKey_.data(), edSig_.data()))
   {
     case 0:
       Log::get().debug("Record has good EdDSA signature");
@@ -370,7 +403,7 @@ bool Record::verifyServiceSig() const
   // check signature
   auto bytes = getServiceSigningScope();
   Botan::PK_Verifier verifier(*serviceKey_, "EMSA-PSS(SHA-512)");
-  if (!verifier.verify_message(bytes, bytes.size(), serviceSig_->data(),
+  if (!verifier.verify_message(bytes, bytes.size(), serviceSig_.data(),
                                Const::RSA_SIG_LEN))
   {
     Log::get().warn("Record's signature is not valid.");
@@ -463,6 +496,9 @@ bool Record::verifyRNG() const
 
 bool Record::verifyPOW() const
 {
+  if (!serviceKey_)
+    return false;
+
   return true;  // todo
   // return computePOW(asBytes(true)) <= Const::POW_WORD_0;
 }
@@ -486,7 +522,7 @@ Botan::MemoryVector<uint8_t> Record::getServicePublicKeyBER() const
 Botan::MemoryVector<uint8_t> Record::getServiceSigningScope() const
 {
   Botan::MemoryVector<uint8_t> bytes(1024);
-  bytes.copy(bytes.size(), edKey_->data(), Const::EdDSA_KEY_LEN);
+  bytes.copy(bytes.size(), edKey_.data(), Const::EdDSA_KEY_LEN);
   bytes.copy(bytes.size(), reinterpret_cast<const uint8_t*>(name_.data()),
              name_.size());
 

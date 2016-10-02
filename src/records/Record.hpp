@@ -72,6 +72,8 @@ class Record
   uint32_t getNonce() const;
 
  private:
+  Record();
+
   bool verifyEdDSA() const;
   bool verifyServiceKey() const;
   bool verifyServiceSig() const;

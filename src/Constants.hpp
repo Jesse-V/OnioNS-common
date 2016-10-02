@@ -28,8 +28,8 @@ class Const
 };
 
 // typedef std::shared_ptr<std::array<uint8_t, Const::SHA256_LEN>> SHA256_HASH;
-typedef std::shared_ptr<std::array<uint8_t, Const::RSA_SIG_LEN>> RSA_SIGNATURE;
-typedef std::shared_ptr<std::array<uint8_t, Const::EdDSA_KEY_LEN>> EdDSA_KEY;
-typedef std::shared_ptr<std::array<uint8_t, Const::EdDSA_SIG_LEN>> EdDSA_SIG;
+typedef std::array<uint8_t, Const::RSA_SIG_LEN> RSA_SIGNATURE;
+typedef std::array<uint8_t, Const::EdDSA_KEY_LEN> EdDSA_KEY;
+typedef std::array<uint8_t, Const::EdDSA_SIG_LEN> EdDSA_SIG;
 
 #endif
