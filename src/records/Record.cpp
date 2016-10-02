@@ -1,27 +1,59 @@
 
 #include "Record.hpp"
-#include "../Utils.hpp"
 #include "../Log.hpp"
+#include "../Utils.hpp"
 #include "cppcodec/cppcodec/base32_default_rfc4648.hpp"
 #include <botan/pubkey.h>
-#include <botan/sha160.h>
 #include <botan/sha2_32.h>
+#include <botan/sha160.h>
 #include <botan/base64.h>
-#include <chrono>
-#include <random>
-
-
-Record::Record(const std::shared_ptr<Botan::RSA_PrivateKey>& key)
-    : privateKey_(key), publicKey_(key)
-{
-  memset(signature_.data(), 0, Const::RSA_SIGNATURE_LEN);
-}
-
+#include <sstream>
 
 
 Record::Record(const Json::Value& json)  // reciprocal of asJSON
 {
-  privateKey_ = nullptr;
+  // zero variables by default
+  memset(edKey_->data(), 0, Const::EdDSA_KEY_LEN);
+  memset(edSig_->data(), 0, Const::EdDSA_SIG_LEN);
+  memset(serviceSig_.data(), 0, Const::RSA_SIG_LEN);
+  serviceKey_ = nullptr;
+  nonce_ = rng_ = 0;
+
+  if (json.isMember("edKey"))
+  {
+    std::string bytes =
+        Utils::decodeBase64(json["edKey"].asString(), Const::EdDSA_KEY_LEN);
+    std::copy(bytes.begin(), bytes.end(), edKey_->begin());
+  }
+
+  if (json.isMember("edSig"))
+  {
+    std::string bytes =
+        Utils::decodeBase64(json["edSig"].asString(), Const::EdDSA_SIG_LEN);
+    std::copy(bytes.begin(), bytes.end(), edSig_->begin());
+  }
+
+  if (json.isMember("rsaKey"))
+  {
+    std::string bytes =
+        Utils::decodeBase64(json["rsaKey"].asString(), Const::RSA_KEY_LEN);
+    if (!bytes.empty())
+    {
+      // interpret and parse into public RSA key
+      std::istringstream iss(bytes);
+      Botan::DataSource_Stream keyStream(iss);
+      setServicePublicKey(std::make_shared<Botan::RSA_PublicKey>(
+          *dynamic_cast<Botan::RSA_PublicKey*>(
+              Botan::X509::load_key(keyStream))));
+    }
+  }
+
+  if (json.isMember("rsaSig"))
+  {
+    std::string bytes =
+        Utils::decodeBase64(json["rsaSig"].asString(), Const::RSA_SIG_LEN);
+    std::copy(bytes.begin(), bytes.end(), serviceSig_.begin());
+  }
 
   if (json.isMember("type"))
     setType(json["type"].asString());
@@ -29,8 +61,8 @@ Record::Record(const Json::Value& json)  // reciprocal of asJSON
   if (json.isMember("name"))
     setName(json["name"].asString());
 
-  if (json.isMember("contact"))
-    setName(json["contact"].asString());
+  if (json.isMember("pgp"))
+    setName(json["pgp"].asString());
 
   StringMap subdomains;
   if (json.isMember("subd"))
@@ -42,11 +74,36 @@ Record::Record(const Json::Value& json)  // reciprocal of asJSON
   }
   setSubdomains(subdomains);
 
-  if (json.isMember("pubHSKey"))
-    publicKey_ = Utils::BER64toRSA(json["pubHSKey"].asString());
+  if (json.isMember("rng") && json["rng"].isUInt())
+    setRNG(json["rng"].asUInt());
 
-  if (json.isMember("signature"))
-    signature_ = Utils::decodeSignature(json["signature"].asString());
+  if (json.isMember("nonce") && json["nonce"].isUInt())
+    setNonce(json["nonce"].asUInt());
+}
+
+
+
+Record::Record(const EdDSA_KEY& key,
+               const EdDSA_SIG& sig,
+               const std::shared_ptr<Botan::RSA_PublicKey>& hsKey,
+               const RSA_SIGNATURE& hsSig,
+               const std::string& type,
+               const std::string& name,
+               const std::string& pgp,
+               const StringMap& subdomains,
+               uint32_t rng,
+               uint32_t nonce)
+    : edKey_(key),
+      edSig_(sig),
+      serviceKey_(hsKey),
+      serviceSig_(hsSig),
+      type_(type),
+      name_(name),
+      contact_(pgp),
+      subdomains_(subdomains),
+      rng_(rng),
+      nonce_(nonce)
+{
 }
 
 
@@ -60,21 +117,7 @@ std::string Record::resolve(const std::string& source) const
   // check TLD?
 
   if (source == name_)
-  {
-    if (secondaryAddrs_.empty())
-      return computeOnion();
-    else
-    {
-      // perform randomized load balancing between main and secondary addresses
-      std::mt19937 rng(
-          std::chrono::system_clock::now().time_since_epoch().count());
-      auto value = rng() % (secondaryAddrs_.size() + 1);
-      if (value == 0)
-        return computeOnion();
-      else
-        return secondaryAddrs_[value - 1];
-    }
-  }
+    return computeOnion();
 
   // check subdomains
   for (auto sub : subdomains_)
@@ -87,17 +130,30 @@ std::string Record::resolve(const std::string& source) const
 
 
 
-// used just for the PoW check
-SHA256_HASH Record::computeValue() const
-{  // should we also hash the beacon and the public key?
+// used to uniquely identify the record
+SHA256_HASH Record::hash() const
+{
+  Json::FastWriter writer;
+  std::string str = writer.write(asBytes());
 
-  // sign();
   Botan::SHA_256 sha;
-  auto hashBytes = sha.process(signature_.data(), Const::RSA_SIGNATURE_LEN);
+  SHA256_HASH hashBytes;
+  auto shaHash = sha.process(str);
+  std::copy(shaHash.begin(), shaHash.end(), hashBytes.begin());
+  return hashBytes;
+}
+
+
+
+uint32_t Record::computePOW(const std::string& bytes) const
+{
+  Botan::SHA_256 sha;
+  auto hashBytes = sha.process(
+      reinterpret_cast<const unsigned char*>(bytes.data()), bytes.size());
 
   SHA256_HASH hashArray;
-  std::copy(hashBytes.begin(), hashBytes.end(), hashArray.begin());
-  return hashArray;
+  std::copy(hashBytes.begin(), hashBytes.begin() + 4, hashArray.begin());
+  return *reinterpret_cast<uint16_t*>(hashArray.data());
 }
 
 
@@ -105,19 +161,216 @@ SHA256_HASH Record::computeValue() const
 bool Record::computeValidity() const
 {
   // thanks to the PoPETS reviewer who suggested checking PoW first to avoid DoS
+  return verifyPOW() && verifyEdDSA() && verifyServiceKey() &&
+         verifyServiceSig() && verifyRNG() && verifySubdomains() &&
+         verifyStrings();
+}
 
-  // compute PoW value
-  SHA256_HASH hash = computeValue();
-  for (int j = 0; j < Const::POW_THRESHOLD_BYTES; j++)  // check bytes
-    if (hash.data()[j] != 0)
+
+
+std::string Record::computeOnion() const
+{
+  // https://gitweb.torproject.org/torspec.git/tree/tor-spec.txt :
+  // When we refer to "the hash of a public key", we mean the SHA-1 hash of the
+  // DER encoding of an ASN.1 RSA public key (as specified in PKCS.1).
+
+  // get DER encoding of RSA key
+  std::string keyBinStr;
+  auto x509Key = serviceKey_->x509_subject_public_key();
+  std::copy(x509Key.begin(), x509Key.end(), keyBinStr.begin());
+
+  // perform SHA-1
+  std::string hashBin;
+  Botan::SHA_160 sha1;
+  auto hash = sha1.process(keyBinStr);
+  std::copy(hash.begin(), hash.end(), hashBin.begin());
+
+  // encode, make lowercase, truncate, and return
+  auto oAddr = base32::encode(hashBin);
+  std::transform(oAddr.begin(), oAddr.end(), oAddr.begin(), ::tolower);
+  return std::string(oAddr, 16) + ".onion";
+}
+
+
+
+// last four bytes is the nonce
+std::string Record::asBytes(bool forSigning) const
+{
+  std::string bytes;
+  bytes.reserve(1024);
+
+  bytes += type_ + name_ + contact_;
+  for (auto sub : subdomains_)
+    bytes += sub.first + sub.second;
+
+  bytes += getServicePublicKeyBER();
+  bytes.insert(bytes.size(), reinterpret_cast<const char*>(edKey_->data()),
+               Const::EdDSA_KEY_LEN);
+
+  if (!forSigning)
+  {  // include EdDSA and RSA signatures
+    bytes.insert(bytes.size(), reinterpret_cast<const char*>(edSig_->data()),
+                 Const::EdDSA_SIG_LEN);
+    bytes.insert(bytes.size(),
+                 reinterpret_cast<const char*>(serviceSig_.data()),
+                 Const::RSA_SIG_LEN);
+  }
+
+  // add numbers
+  bytes.insert(bytes.size(), reinterpret_cast<const char*>(&rng_), 4);
+  bytes.insert(bytes.size(), reinterpret_cast<const char*>(&nonce_), 4);
+  Log::get().debug("Byte size: " + std::to_string(bytes.size()));
+  return bytes;
+}
+
+
+
+Json::Value Record::asJSON() const
+{
+  Json::Value obj;
+
+  // add keys
+  auto rsa_ber = getServicePublicKeyBER();
+  obj["edKey"] = Botan::base64_encode(edKey_->data(), Const::EdDSA_KEY_LEN);
+  obj["edSig"] = Botan::base64_encode(edSig_->data(), Const::EdDSA_SIG_LEN);
+  obj["rsaKey"] = Botan::base64_encode(
+      reinterpret_cast<const unsigned char*>(rsa_ber.data()), rsa_ber.size());
+  obj["rsaSig"] = Botan::base64_encode(serviceSig_.data(), Const::RSA_SIG_LEN);
+
+  // add various
+  obj["type"] = type_;
+  obj["name"] = name_;
+  obj["rng"] = rng_;
+  obj["nonce"] = nonce_;
+
+  if (!contact_.empty())
+    obj["pgp"] = contact_;
+
+  for (auto sub : subdomains_)
+    obj["subd"][sub.first] = sub.second;
+
+  return obj;
+}
+
+
+
+std::ostream& operator<<(std::ostream& os, const Record& r)
+{
+  bool valid = r.computeValidity();
+  std::string onion = r.computeOnion();
+
+  os << r.type_ << " record: (currently " << (valid ? "VALID)" : "INVALID)")
+     << std::endl
+     << std::endl;
+
+  os << "  Domain Information: " << std::endl;
+  os << "    " << r.name_ << " -> " << onion << std::endl;
+  for (auto subd : r.subdomains_)
+    os << "      " << subd.first << "." << r.name_ << " -> " << subd.second
+       << std::endl
+       << std::endl;
+
+  os << "  Owner: " << std::endl;
+  os << "    Key: "
+     << Botan::base64_encode(r.edKey_->data(), Const::EdDSA_KEY_LEN)
+     << std::endl;
+  os << "    Signature: "
+     << Botan::base64_encode(r.edSig_->data(), Const::EdDSA_SIG_LEN)
+     << std::endl;
+  if (r.contact_.empty())
+    os << "    Contact: PGP 0x" << r.contact_ << std::endl << std::endl;
+
+
+  os << "  Validation:" << std::endl;
+  os << "    Proof of Work: " << r.computePOW(r.asBytes())
+     << (r.verifyPOW() ? " (valid)" : " (invalid)") << std::endl;
+  os << "    Nonce: " << r.nonce_ << std::endl;
+  os << "    Quorum tag: " << r.rng_;
+  /*
+     os << "   Signature: ";
+     if (valid)
+       os << Botan::base64_encode(r.serviceSig_.data(), r.serviceSig_.size() /
+     4)
+          << " ..." << std::endl;
+     else
+       os << "<regeneration required>" << std::endl;
+
+     auto pem = Botan::X509::PEM_encode(*r.publicKey_);
+     pem.pop_back();  // delete trailing /n
+     Utils::stringReplace(pem, "\n", "\n\t");
+     os << "      RSA Public Key: \n\t" << pem;
+  */
+  return os;
+}
+
+
+
+// ************************** VERIFICATION ************************** //
+
+
+
+bool Record::verifyEdDSA() const
+{  // edDSA signature - edDSA key, name, destinations, data, nonce
+  std::string bStr = asBytes(true);
+  const uint8_t* bytes = reinterpret_cast<const uint8_t*>(bStr.data());
+
+  switch (ed25519_sign_open(bytes, bStr.size(), edKey_->data(), edSig_->data()))
+  {
+    case 0:
+      Log::get().debug("Record has good EdDSA signature");
+      return true;
+
+    case 1:
+      Log::get().warn("Record has bad EdDSA signature");
       return false;
 
-  if (hash.data()[Const::POW_THRESHOLD_BYTES] > Const::POW_THRESHOLD)
+    case -1:
+      Log::get().error("EdDSA cryptographic error while checking signature!");
+      return false;
+  }
+
+  Log::get().error("Impossible return value from ed25519-donna!");
+  return false;
+}
+
+
+
+bool Record::verifyServiceKey() const
+{
+  if (!serviceKey_)  // need at least one key
     return false;
 
-  Log::get().notice("Record has valid PoW value.");
-  return verifySignature() && verifyStrings() && verifySubdomains() &&
-         verifySecondaryAddrs() && verifyKeys();
+  // check public key
+  auto size = serviceKey_->get_n().bits();
+  if (serviceKey_ && size != Const::RSA_KEY_LEN)
+  {
+    Log::get().warn("Record has " + std::to_string(size) +
+                    "-bit public key. Expected 1024-bit RSA.");
+    return false;
+  }
+
+  return true;
+}
+
+
+
+bool Record::verifyServiceSig() const
+{
+  std::string edKeyStr(reinterpret_cast<const char*>(edKey_->data()),
+                       Const::EdDSA_KEY_LEN);
+  std::string bytesStr = edKeyStr + name_ + getServicePublicKeyBER();
+
+  // check signature
+  auto bytes = reinterpret_cast<const unsigned char*>(bytesStr.data());
+  Botan::PK_Verifier verifier(*serviceKey_, "EMSA-PSS(SHA-512)");
+  if (!verifier.verify_message(bytes, bytesStr.size(), serviceSig_.data(),
+                               Const::RSA_SIG_LEN))
+  {
+    Log::get().warn("Record's signature is not valid.");
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -194,255 +447,54 @@ bool Record::verifySubdomains() const
 
 
 
-bool Record::verifySignature() const
+bool Record::verifyRNG() const
 {
-  // assemble data
-  Json::FastWriter writer;
-  Json::Value json = asJSON();
-  json.removeMember("signature");
-  std::string jsonStr = writer.write(json);
-
-  // check signature
-  auto bytes = reinterpret_cast<const unsigned char*>(jsonStr.data());
-  Botan::PK_Verifier verifier(*publicKey_, "EMSA4(SHA-512)");
-  if (!verifier.verify_message(bytes, jsonStr.size(), signature_.data(),
-                               Const::RSA_SIGNATURE_LEN))
-  {
-    Log::get().warn("Record's signature is not valid.");
-    return false;
-  }
-
-  return true;
+  return true;  // todo
 }
 
 
 
-bool Record::verifySecondaryAddrs() const
+bool Record::verifyPOW() const
 {
-  if (secondaryAddrs_.size() > 7)
-  {
-    Log::get().warn("Record has more than 8 addresses.");
-    return false;
-  }
-
-  for (auto addr : secondaryAddrs_)
-  {
-    if (addr.length() != 16 + 6)
-    {
-      Log::get().warn("Record's secondary address has invalid length.");
-      return false;
-    }
-
-    if (!Utils::strEndsWith(addr, ".onion"))
-    {
-      Log::get().warn("Record's secondary address does not end in \".onion\"");
-      return false;
-    }
-  }
-
-  return true;
-}
-
-
-
-bool Record::verifyKeys() const
-{
-  if (!privateKey_ && !publicKey_)  // need at least one key
-    return false;
-
-  // check private key
-  auto size = privateKey_->get_n().bits();
-  if (privateKey_ && size != Const::RSA_LEN)
-  {
-    Log::get().warn("Record has " + std::to_string(size) +
-                    "-bit private key. Expected 1024-bit RSA.");
-    return false;
-  }
-
-  // check public key
-  size = publicKey_->get_n().bits();
-  if (publicKey_ && size != Const::RSA_LEN)
-  {
-    Log::get().warn("Record has " + std::to_string(size) +
-                    "-bit public key. Expected 1024-bit RSA.");
-    return false;
-  }
-
-  return true;
-}
-
-
-
-// used to uniquely identify the record
-SHA256_HASH Record::hash() const
-{  // hashing the JSON is slower, but improves flexibility and helps -HS code
-
-  Json::FastWriter writer;
-  std::string str = writer.write(asJSON());
-
-  Botan::SHA_256 sha;
-  SHA256_HASH hashBytes;
-  auto shaHash = sha.process(str);
-  std::copy(shaHash.begin(), shaHash.end(), hashBytes.begin());
-  return hashBytes;
-}
-
-
-
-void Record::sign()
-{
-  static Botan::AutoSeeded_RNG rng;
-
-  Json::FastWriter writer;
-  Json::Value json = asJSON();
-  json.removeMember("signature");
-  std::string jsonStr = writer.write(json);
-
-  auto bytes = reinterpret_cast<const unsigned char*>(jsonStr.data());
-  Botan::PK_Signer signer(*privateKey_, "EMSA4(SHA-512)");
-  auto sig = signer.sign_message(bytes, jsonStr.size(), rng);
-  std::copy(sig.begin(), sig.end(), signature_.begin());
-}
-
-
-
-std::string Record::computeOnion() const
-{
-  // https://gitweb.torproject.org/torspec.git/tree/tor-spec.txt :
-  // When we refer to "the hash of a public key", we mean the SHA-1 hash of the
-  // DER encoding of an ASN.1 RSA public key (as specified in PKCS.1).
-
-  // get DER encoding of RSA key
-  std::string keyBinStr;
-  auto x509Key = privateKey_->x509_subject_public_key();
-  std::copy(x509Key.begin(), x509Key.end(), keyBinStr.begin());
-
-  // perform SHA-1
-  std::string hashBin;
-  Botan::SHA_160 sha1;
-  auto hash = sha1.process(keyBinStr);
-  std::copy(hash.begin(), hash.end(), hashBin.begin());
-
-  // encode, make lowercase, truncate, and return
-  auto oAddr = base32::encode(hashBin);
-  std::transform(oAddr.begin(), oAddr.end(), oAddr.begin(), ::tolower);
-  return std::string(oAddr, 16) + ".onion";
-}
-
-
-
-Json::Value Record::asJSON() const
-{
-  Json::Value obj;
-
-  obj["type"] = type_;
-  obj["name"] = name_;
-  if (!contact_.empty())
-    obj["contact"] = contact_;
-
-  // add subdomains, if they exist
-  for (auto sub : subdomains_)
-    obj["subd"][sub.first] = sub.second;
-
-  // extract and save public key
-  auto ber = getPublicKeyBER();
-  obj["pubHSKey"] = Botan::base64_encode(ber.data, ber.length);
-  obj["signature"] = Botan::base64_encode(signature_.data(), signature_.size());
-  return obj;
-}
-
-
-
-std::ostream& operator<<(std::ostream& os, const Record& r)
-{
-  bool valid = r.computeValidity();
-  std::string onion = r.computeOnion();
-
-  os << "Domain Registration: (currently " << (valid ? "VALID)" : "INVALID)")
-     << std::endl;
-
-  os << "   Domain Information: " << std::endl;
-  os << "      " << r.name_ << " -> " << onion << std::endl;
-
-  for (auto addr : r.secondaryAddrs_)
-    os << "      " << addr << " -> " << onion << std::endl;
-
-  for (auto subd : r.subdomains_)
-    os << "      " << subd.first << "." << r.name_ << " -> " << subd.second
-       << std::endl;
-
-  if (r.contact_.empty())
-    os << "   Contact: PGP 0x" << r.contact_ << std::endl;
-  os << "   Validation:" << std::endl;
-
-  os << "      Proof of Work: ";
-  if (valid)
-    os << "Below threshold" << std::endl;
-  else
-    os << "<regeneration required>" << std::endl;
-
-  os << "      Signature: ";
-  if (valid)
-    os << Botan::base64_encode(r.signature_.data(), r.signature_.size() / 4)
-       << " ..." << std::endl;
-  else
-    os << "<regeneration required>" << std::endl;
-
-  auto pem = Botan::X509::PEM_encode(*r.publicKey_);
-  pem.pop_back();  // delete trailing /n
-  Utils::stringReplace(pem, "\n", "\n\t");
-  os << "      RSA Public Key: \n\t" << pem;
-
-  return os;
-}
-
-
-// ************************** SET METHODS ************************** //
-
-
-
-void Record::setType(const std::string& type)
-{
-  type_ = type;
-}
-
-
-void Record::setName(const std::string& name)
-{
-  name_ = name;
-}
-
-
-
-void Record::setContact(const std::string& contact)
-{
-  contact_ = contact;
-}
-
-
-
-void Record::setSubdomains(const StringMap& subdomains)
-{
-  subdomains_ = subdomains;
-}
-
-
-
-void Record::setSecondaryAddresses(const std::vector<std::string>& addrs)
-{
-  secondaryAddrs_ = addrs;
-}
-
-
-
-void Record::setPrivateKey(const std::shared_ptr<Botan::RSA_PrivateKey>& key)
-{
-  privateKey_ = key;
+  return computePOW(asBytes(true)) > Const::POW_WORD_0;
 }
 
 
 
 // ************************** GET METHODS ************************** //
+
+
+
+std::string Record::getServicePublicKeyBER() const
+{
+  // https://en.wikipedia.org/wiki/X.690#BER_encoding
+  std::string berBin;
+  auto ber = Botan::X509::BER_encode(*getServicePublicKey());
+  std::copy(ber.begin(), ber.end(), berBin.begin());
+  Log::get().notice("BER size: " + std::to_string(ber.size()));
+  return berBin;
+}
+
+
+
+EdDSA_KEY Record::getMasterPublicKey() const
+{
+  return edKey_;
+}
+
+
+
+EdDSA_SIG Record::getMasterSignature() const
+{
+  return edSig_;
+}
+
+
+
+std::shared_ptr<Botan::RSA_PublicKey> Record::getServicePublicKey() const
+{
+  return serviceKey_;
+}
 
 
 
@@ -474,37 +526,87 @@ StringMap Record::getSubdomains() const
 
 
 
-std::vector<std::string> Record::getSecondaryAddresses() const
+uint32_t Record::getRNG() const
 {
-  return secondaryAddrs_;
+  return rng_;
 }
 
 
 
-std::shared_ptr<Botan::RSA_PublicKey> Record::getPublicKey() const
+uint32_t Record::getNonce() const
 {
-  return privateKey_;
+  return nonce_;
 }
 
 
 
-// https://en.wikipedia.org/wiki/X.690#BER_encoding
-UInt8Array Record::getPublicKeyBER() const
-{
-  std::string berBin;
-  auto ber = Botan::X509::BER_encode(*getPublicKey());
-  std::copy(ber.begin(), ber.end(), berBin.begin());
+// ************************** SET METHODS ************************** //
 
-  UInt8Array array;
-  array.data = reinterpret_cast<const unsigned char*>(berBin.data());
-  array.length = ber.size();
-  Log::get().notice("BER size: " + std::to_string(ber.size()));
-  return array;
+
+
+void Record::setMasterPublicKey(const EdDSA_KEY& key)
+{
+  edKey_ = key;
 }
 
 
 
-RSA_SIGNATURE Record::getSignature() const
+void Record::setMasterSignature(const EdDSA_SIG& sig)
 {
-  return signature_;
+  edSig_ = sig;
+}
+
+
+
+void Record::setServicePublicKey(
+    const std::shared_ptr<Botan::RSA_PublicKey>& key)
+{
+  serviceKey_ = key;
+}
+
+
+
+void Record::setServiceSignature(const RSA_SIGNATURE& sig)
+{
+  serviceSig_ = sig;
+}
+
+
+
+void Record::setName(const std::string& name)
+{
+  name_ = name;
+}
+
+
+void Record::setType(const std::string& type)
+{
+  type_ = type;
+}
+
+
+
+void Record::setContact(const std::string& contact)
+{
+  contact_ = contact;
+}
+
+
+void Record::setSubdomains(const StringMap& subdomains)
+{
+  subdomains_ = subdomains;
+}
+
+
+
+void Record::setRNG(uint32_t rng)
+{
+  rng_ = rng;
+}
+
+
+
+void Record::setNonce(uint32_t nonce)
+{
+  nonce_ = nonce;
 }

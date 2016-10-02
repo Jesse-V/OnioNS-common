@@ -10,58 +10,77 @@
 #include <vector>
 #include <memory>
 
+#include "ed25519-donna/ed25519.h"
+
 typedef std::vector<std::pair<std::string, std::string>> StringMap;
 
 class Record
 {
  public:
-  Record(const std::shared_ptr<Botan::RSA_PrivateKey>&);
   Record(const Json::Value&);
+  Record(const EdDSA_KEY&,
+         const EdDSA_SIG&,
+         const std::shared_ptr<Botan::RSA_PublicKey>&,
+         const RSA_SIGNATURE&,
+         const std::string&,
+         const std::string&,
+         const std::string&,
+         const StringMap&,
+         uint32_t,
+         uint32_t);
 
   // action methods
   std::string resolve(const std::string&) const;
-  SHA256_HASH computeValue() const;
-  bool computeValidity() const;
   SHA256_HASH hash() const;
-  void sign();
+  uint32_t computePOW(const std::string&) const;
+  bool computeValidity() const;
   std::string computeOnion() const;
+  std::string asBytes(bool forSigning = false) const;
   Json::Value asJSON() const;
   friend std::ostream& operator<<(std::ostream&, const Record&);
 
   // set methods
+  void setMasterPublicKey(const EdDSA_KEY&);
+  void setMasterSignature(const EdDSA_SIG&);
+  void setServicePublicKey(const std::shared_ptr<Botan::RSA_PublicKey>&);
+  void setServiceSignature(const RSA_SIGNATURE&);
   void setType(const std::string&);
   void setName(const std::string&);
   void setContact(const std::string&);
   void setSubdomains(const StringMap&);
-  void setSecondaryAddresses(const std::vector<std::string>&);
-  void setPrivateKey(const std::shared_ptr<Botan::RSA_PrivateKey>&);
+  void setRNG(uint32_t);
+  void setNonce(uint32_t);
 
   // get methods
+  EdDSA_KEY getMasterPublicKey() const;
+  EdDSA_SIG getMasterSignature() const;
+  std::shared_ptr<Botan::RSA_PublicKey> getServicePublicKey() const;
+  std::string getServicePublicKeyBER() const;
+  RSA_SIGNATURE getServiceSignature() const;
   std::string getType() const;
   std::string getName() const;
   std::string getContact() const;
   StringMap getSubdomains() const;
-  std::vector<std::string> getSecondaryAddresses() const;
-  std::shared_ptr<Botan::RSA_PublicKey> getPublicKey() const;
-  UInt8Array getPublicKeyBER() const;
-  RSA_SIGNATURE getSignature() const;
+  uint32_t getRNG() const;
+  uint32_t getNonce() const;
 
  private:
+  bool verifyEdDSA() const;
+  bool verifyServiceKey() const;
+  bool verifyServiceSig() const;
   bool verifyStrings() const;
   bool verifySubdomains() const;
-  bool verifySecondaryAddrs() const;
-  bool verifyKeys() const;
-  bool verifySignature() const;
+  bool verifyRNG() const;
+  bool verifyPOW() const;
 
+  EdDSA_KEY edKey_;
+  EdDSA_SIG edSig_;
+  std::shared_ptr<Botan::RSA_PublicKey> serviceKey_;
+  RSA_SIGNATURE serviceSig_;
   std::string type_, name_, contact_;
   StringMap subdomains_;
-  std::vector<std::string> secondaryAddrs_;
-  std::shared_ptr<Botan::RSA_PrivateKey> privateKey_;
-  std::shared_ptr<Botan::RSA_PublicKey> publicKey_;
-  RSA_SIGNATURE signature_;
-  // missing beacon, missing a validity/proper flag?
+  uint32_t rng_, nonce_;
 };
-
 
 typedef std::shared_ptr<Record> RecordPtr;
 
