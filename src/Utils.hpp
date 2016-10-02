@@ -4,10 +4,8 @@
 
 #include "Constants.hpp"
 #include <botan/rsa.h>
-#include <cstdint>
 #include <vector>
 #include <string>
-#include <memory>
 
 class Utils
 {
@@ -20,8 +18,7 @@ class Utils
   static bool strBeginsWith(const std::string&, const std::string&);
   static std::string trimString(const std::string&);
 
-  static std::shared_ptr<Botan::RSA_PublicKey> BER64toRSA(const std::string&);
-  static RSA_SIGNATURE decodeSignature(const std::string&);
+  static std::string decodeBase64(const std::string&, size_t);
   static std::shared_ptr<Botan::RSA_PrivateKey> loadKey(const std::string&);
   static std::shared_ptr<Botan::RSA_PrivateKey> loadOpenSSLRSA(
       const std::string&);

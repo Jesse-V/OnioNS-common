@@ -4,9 +4,6 @@
 #include <botan/pem.h>
 #include <botan/base64.h>
 #include <botan/auto_rng.h>
-//#include <cstdio>
-//#include <stdexcept>
-#include <sstream>
 #include <sys/stat.h>
 
 
@@ -79,38 +76,25 @@ std::string Utils::trimString(const std::string& str)
 
 
 
-std::shared_ptr<Botan::RSA_PublicKey> Utils::BER64toRSA(const std::string& b64)
+std::string Utils::decodeBase64(const std::string& b64, size_t max)
 {
-  // decode public key
   const auto eSize = decode64Size(b64.length());
   uint8_t* buffer = new uint8_t[eSize];
   size_t len = Botan::base64_decode(buffer, b64, false);
 
-  // interpret and parse into public RSA key
-  std::string str(reinterpret_cast<const char*>(buffer), len);
-  std::istringstream iss(str);
-  Botan::DataSource_Stream keyStream(iss);
-  return std::make_shared<Botan::RSA_PublicKey>(
-      *dynamic_cast<Botan::RSA_PublicKey*>(Botan::X509::load_key(keyStream)));
-}
-
-
-
-RSA_SIGNATURE Utils::decodeSignature(const std::string& b64)
-{
-  const auto eSize = Utils::decode64Size(b64.size());
-  uint8_t* buffer = new uint8_t[eSize];
-  size_t len = Botan::base64_decode(buffer, b64, false);
-
-  RSA_SIGNATURE sig;
-  if (len == Const::RSA_SIGNATURE_LEN)
-    memcpy(sig.data(), buffer, Const::RSA_SIGNATURE_LEN);
+  if (len <= max)
+  {
+    std::string str(reinterpret_cast<const char*>(buffer));
+    delete[] buffer;
+    return str;
+  }
   else
-    Log::get().warn("Record signature decoded to " + std::to_string(len) +
-                    " bytes, expected 128.");
-
-  memset(sig.data(), 0, Const::RSA_SIGNATURE_LEN);
-  return sig;
+  {
+    Log::get().warn("Base64 decoded to " + std::to_string(len) +
+                    " bytes, expected " + std::to_string(max));
+    delete[] buffer;
+    return "";
+  }
 }
 
 
