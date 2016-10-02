@@ -1,7 +1,7 @@
 
 #include "HttpGet.hpp"
 #include <sstream>
-
+/*
 size_t write_data(void* ptr, size_t size, size_t nmemb, void* stream)
 {
   std::string data((const char*)ptr, (size_t)size * nmemb);
@@ -66,3 +66,4 @@ std::string HttpGet::get(const std::string& url)
 
   return out.str();
 }
+*/
