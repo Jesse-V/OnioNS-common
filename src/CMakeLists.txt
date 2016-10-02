@@ -99,7 +99,7 @@ install(FILES
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf DESTINATION /etc/ld.so.conf.d/)
 
 # install main headers
-set(HEADERS "include/onions-common/")
+set(HEADERS "include/onions-common")
 install(FILES Config.hpp                        DESTINATION ${HEADERS})
 install(FILES Constants.hpp                     DESTINATION ${HEADERS})
 install(FILES Log.hpp                           DESTINATION ${HEADERS})
@@ -114,6 +114,9 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NetworkServerInterface.h    DESTINATIO
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NetworkClient.h             DESTINATION ${HEADERS}/api)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LocalServerInterface.h      DESTINATION ${HEADERS}/api)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LocalClient.h               DESTINATION ${HEADERS}/api)
+
+# install ed25519-donna headers
+install(DIRECTORY libs/ed25519-donna DESTINATION ${HEADERS})
 
 # install headers for json-rpc-cpp dependency
 set(JSONRPC_BASE "libs/libjson-rpc-cpp/src/jsonrpccpp")
@@ -139,15 +142,15 @@ install(FILES ${JSONRPC_BASE}/server/requesthandlerfactory.h        DESTINATION 
 install(FILES ${JSONRPC_BASE}/server/connectors/httpserver.h        DESTINATION ${HEADERS}/jsonrpccpp/server/connectors)
 
 #install encoding library
-install(FILES libs/cppcodec/cppcodec/parse_error.hpp        DESTINATION ${HEADERS}/cppcodec)
-install(FILES libs/cppcodec/cppcodec/base32_default_rfc4648.hpp        DESTINATION ${HEADERS}/cppcodec)
-install(FILES libs/cppcodec/cppcodec/base32_rfc4648.hpp        DESTINATION ${HEADERS}/cppcodec)
-install(FILES libs/cppcodec/cppcodec/detail/base32.hpp        DESTINATION ${HEADERS}/cppcodec/detail)
-install(FILES libs/cppcodec/cppcodec/detail/codec.hpp        DESTINATION ${HEADERS}/cppcodec/detail)
+install(FILES libs/cppcodec/cppcodec/parse_error.hpp                DESTINATION ${HEADERS}/cppcodec)
+install(FILES libs/cppcodec/cppcodec/base32_default_rfc4648.hpp     DESTINATION ${HEADERS}/cppcodec)
+install(FILES libs/cppcodec/cppcodec/base32_rfc4648.hpp             DESTINATION ${HEADERS}/cppcodec)
+install(FILES libs/cppcodec/cppcodec/detail/base32.hpp              DESTINATION ${HEADERS}/cppcodec/detail)
+install(FILES libs/cppcodec/cppcodec/detail/codec.hpp               DESTINATION ${HEADERS}/cppcodec/detail)
 install(FILES libs/cppcodec/cppcodec/detail/stream_codec.hpp        DESTINATION ${HEADERS}/cppcodec/detail)
-install(FILES libs/cppcodec/cppcodec/detail/config.hpp        DESTINATION ${HEADERS}/cppcodec/detail)
-install(FILES libs/cppcodec/cppcodec/data/access.hpp        DESTINATION ${HEADERS}/cppcodec/data)
-install(FILES libs/cppcodec/cppcodec/data/raw_result_buffer.hpp        DESTINATION ${HEADERS}/cppcodec/data)
+install(FILES libs/cppcodec/cppcodec/detail/config.hpp              DESTINATION ${HEADERS}/cppcodec/detail)
+install(FILES libs/cppcodec/cppcodec/data/access.hpp                DESTINATION ${HEADERS}/cppcodec/data)
+install(FILES libs/cppcodec/cppcodec/data/raw_result_buffer.hpp     DESTINATION ${HEADERS}/cppcodec/data)
 
 # setup uninstall target (use libjson-rpc-cpp's uninstall method)
 configure_file(
