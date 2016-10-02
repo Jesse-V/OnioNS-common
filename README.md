@@ -7,6 +7,12 @@ OnioNS is a distributed, privacy-enhanced, metadata-free, and highly usable DNS 
 
 This repository provides the common shared library for the other OnioNS packages, -HS, -server, and -client.
 
+This repository is a much older version of the software. The work continues on the json-rpc branch on all four repositories. The json-rpc branch contains a major but experimental network protocol that uses JSON-RPC-CPP as the underlying transport. That branch also contains the latest design specifications, as described in OnioNS-literature.
+
+I will ask for volunteers when the software is ready to go. In the meantime, please feel to examine my latest commits for any security issues or other concerns.
+
+Yes, I know the network is down. It's currently private because the code is moving around. Once the dust settles, the nodes will come back online.
+
 ### Supported Systems
 
 #### Linux
@@ -25,23 +31,4 @@ Not currently supported, support planned in the far future. I am willing to prov
 
 ### Installation
 
-* **Install from PPA**
-
-The tor-onions-common package is a dependency for the other packages, so there is no need to install it manually.
-
-* **Install from .deb file**
-
-I provide builds for Debian Wheezy and Ubuntu in the [Releases section](https://github.com/Jesse-V/OnioNS-common/releases) for amd64, which probably applies to you. For other architectures, you may download from [my PPA](https://launchpad.net/~jvictors/+archive/tor-dev/+packages).
-
-* **Install from source**
-
-> 1. Debian/Ubuntu/Mint: **sudo apt-get install g++ cmake libpopt-dev botan1.10-dev libasio-dev libboost-system-dev**
-
->> Fedora: **yum install g++ cmake popt-devel botan-devel asio-devel boost-system**
-
-> 2. Download and extract the latest release from the [Releases page](https://github.com/Jesse-V/OnioNS-common/releases).
-> 3. **(mkdir build; cd build; cmake ../src; make -j $(grep -c ^processor /proc/cpuinfo); sudo make install)**
-
-If you are actively developing OnioNS, I have actively prepared two scripts, devBuild.sh and checkBuild.sh. Please see them for more information.
-
-You can cleanup your build with **(rm -rf build; cd src/libs/libscrypt; make clean)**
+Please do not install the software from this branch as it is likely obsolete and will not be supported. See the json-rpc branch instead.
