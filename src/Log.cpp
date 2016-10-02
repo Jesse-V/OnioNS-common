@@ -27,6 +27,13 @@ Log::Log()
 
 
 
+void Log::debug(const std::string& str)
+{
+  log("debug", str);
+}
+
+
+
 void Log::notice(const std::string& str)
 {
   log("notice", str);

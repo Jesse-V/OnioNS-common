@@ -14,6 +14,7 @@ class Log
     return instance;
   }
 
+  void debug(const std::string&);
   void notice(const std::string&);
   void warn(const std::string&);
   void error(const std::string&);
