@@ -13,34 +13,35 @@
 Record::Record(const Json::Value& json)  // reciprocal of asJSON
 {
   // zero variables by default
-  memset(edKey_->data(), 0, Const::EdDSA_KEY_LEN);
-  memset(edSig_->data(), 0, Const::EdDSA_SIG_LEN);
-  memset(serviceSig_.data(), 0, Const::RSA_SIG_LEN);
+  edKey_->fill(0);
+  edSig_->fill(0);
+  serviceSig_->fill(0);
   serviceKey_ = nullptr;
   nonce_ = rng_ = 0;
 
   if (json.isMember("edKey"))
   {
-    std::string bytes =
+    auto bytes =
         Utils::decodeBase64(json["edKey"].asString(), Const::EdDSA_KEY_LEN);
     std::copy(bytes.begin(), bytes.end(), edKey_->begin());
   }
 
   if (json.isMember("edSig"))
   {
-    std::string bytes =
+    auto bytes =
         Utils::decodeBase64(json["edSig"].asString(), Const::EdDSA_SIG_LEN);
     std::copy(bytes.begin(), bytes.end(), edSig_->begin());
   }
 
   if (json.isMember("rsaKey"))
   {
-    std::string bytes =
+    auto bin =
         Utils::decodeBase64(json["rsaKey"].asString(), Const::RSA_KEY_LEN);
-    if (!bytes.empty())
+    if (!bin.empty())
     {
       // interpret and parse into public RSA key
-      std::istringstream iss(bytes);
+      std::string str(reinterpret_cast<const char*>(bin.data()), bin.size());
+      std::istringstream iss(str);
       Botan::DataSource_Stream keyStream(iss);
       setServicePublicKey(std::make_shared<Botan::RSA_PublicKey>(
           *dynamic_cast<Botan::RSA_PublicKey*>(
@@ -50,9 +51,9 @@ Record::Record(const Json::Value& json)  // reciprocal of asJSON
 
   if (json.isMember("rsaSig"))
   {
-    std::string bytes =
+    auto bytes =
         Utils::decodeBase64(json["rsaSig"].asString(), Const::RSA_SIG_LEN);
-    std::copy(bytes.begin(), bytes.end(), serviceSig_.begin());
+    std::copy(bytes.begin(), bytes.end(), serviceSig_->begin());
   }
 
   if (json.isMember("type"))
@@ -108,6 +109,27 @@ Record::Record(const EdDSA_KEY& key,
 
 
 
+Record::Record(const std::string& type,
+               const std::string& name,
+               const std::string& pgp,
+               const StringMap& subdomains,
+               uint32_t rng,
+               uint32_t nonce)
+    : type_(type),
+      name_(name),
+      contact_(pgp),
+      subdomains_(subdomains),
+      rng_(rng),
+      nonce_(nonce)
+{
+  edKey_->fill(0);
+  edSig_->fill(0);
+  serviceSig_->fill(0);
+  serviceKey_ = nullptr;
+}
+
+
+
 // ************************** ACTION METHODS ************************** //
 
 
@@ -131,29 +153,23 @@ std::string Record::resolve(const std::string& source) const
 
 
 // used to uniquely identify the record
-SHA256_HASH Record::hash() const
+Botan::SecureVector<uint8_t> Record::hash() const
 {
-  Json::FastWriter writer;
-  std::string str = writer.write(asBytes());
-
   Botan::SHA_256 sha;
-  SHA256_HASH hashBytes;
-  auto shaHash = sha.process(str);
-  std::copy(shaHash.begin(), shaHash.end(), hashBytes.begin());
-  return hashBytes;
+  auto bytes = asBytes();
+  return sha.process(Botan::MemoryVector<uint8_t>(bytes.data(), bytes.size()));
 }
 
 
 
-uint32_t Record::computePOW(const std::string& bytes) const
+uint32_t Record::computePOW(const std::vector<uint8_t>& bytes) const
 {
   Botan::SHA_256 sha;
-  auto hashBytes = sha.process(
-      reinterpret_cast<const unsigned char*>(bytes.data()), bytes.size());
+  auto hashBytes = sha.process(bytes.data(), bytes.size());
 
-  SHA256_HASH hashArray;
-  std::copy(hashBytes.begin(), hashBytes.begin() + 4, hashArray.begin());
-  return *reinterpret_cast<uint16_t*>(hashArray.data());
+  std::array<uint8_t, 4> value;
+  std::copy(hashBytes.begin(), hashBytes.end(), value.begin());
+  return *reinterpret_cast<uint16_t*>(value.data());
 }
 
 
@@ -174,51 +190,53 @@ std::string Record::computeOnion() const
   // When we refer to "the hash of a public key", we mean the SHA-1 hash of the
   // DER encoding of an ASN.1 RSA public key (as specified in PKCS.1).
 
-  // get DER encoding of RSA key
-  std::string keyBinStr;
-  auto x509Key = serviceKey_->x509_subject_public_key();
-  std::copy(x509Key.begin(), x509Key.end(), keyBinStr.begin());
-
-  // perform SHA-1
-  std::string hashBin;
+  // perform SHA-1 of DER encoding of RSA key
   Botan::SHA_160 sha1;
-  auto hash = sha1.process(keyBinStr);
-  std::copy(hash.begin(), hash.end(), hashBin.begin());
+  auto hash = sha1.process(serviceKey_->x509_subject_public_key());
+  // "hash" is a technical term: https://sphincs.cr.yp.to/
 
   // encode, make lowercase, truncate, and return
-  auto oAddr = base32::encode(hashBin);
-  std::transform(oAddr.begin(), oAddr.end(), oAddr.begin(), ::tolower);
-  return std::string(oAddr, 16) + ".onion";
+  std::string hashStr;
+  std::copy(hash.begin(), hash.end(), hashStr.begin());
+  std::string addr = base32::encode(hashStr);
+  std::transform(addr.begin(), addr.end(), addr.begin(), ::tolower);
+  return std::string(addr, 16) + ".onion";
 }
 
 
 
 // last four bytes is the nonce
-std::string Record::asBytes(bool forSigning) const
+std::vector<uint8_t> Record::asBytes(bool forSigning) const
 {
-  std::string bytes;
+  std::vector<uint8_t> bytes;
   bytes.reserve(1024);
 
-  bytes += type_ + name_ + contact_;
-  for (auto sub : subdomains_)
-    bytes += sub.first + sub.second;
+  bytes.insert(bytes.end(), type_.begin(), type_.end());
+  bytes.insert(bytes.end(), name_.begin(), name_.end());
+  bytes.insert(bytes.end(), contact_.begin(), contact_.end());
 
-  bytes += getServicePublicKeyBER();
-  bytes.insert(bytes.size(), reinterpret_cast<const char*>(edKey_->data()),
-               Const::EdDSA_KEY_LEN);
+  for (auto sub : subdomains_)
+  {
+    bytes.insert(bytes.end(), sub.first.begin(), sub.first.end());
+    bytes.insert(bytes.end(), sub.second.begin(), sub.second.end());
+  }
+
+  auto ber = getServicePublicKeyBER();
+  bytes.insert(bytes.end(), ber.begin(), ber.end());
+  bytes.insert(bytes.end(), edKey_->begin(), edKey_->end());
 
   if (!forSigning)
   {  // include EdDSA and RSA signatures
-    bytes.insert(bytes.size(), reinterpret_cast<const char*>(edSig_->data()),
-                 Const::EdDSA_SIG_LEN);
-    bytes.insert(bytes.size(),
-                 reinterpret_cast<const char*>(serviceSig_.data()),
-                 Const::RSA_SIG_LEN);
+    bytes.insert(bytes.end(), edSig_->begin(), edSig_->end());
+    bytes.insert(bytes.end(), serviceSig_->begin(), serviceSig_->end());
   }
 
   // add numbers
-  bytes.insert(bytes.size(), reinterpret_cast<const char*>(&rng_), 4);
-  bytes.insert(bytes.size(), reinterpret_cast<const char*>(&nonce_), 4);
+  std::array<uint8_t, 8> numbers;
+  memcpy(numbers.data(), &rng_, 4);
+  memcpy(numbers.data(), &nonce_, 4);
+  bytes.insert(bytes.end(), numbers.begin(), numbers.end());
+
   Log::get().debug("Byte size: " + std::to_string(bytes.size()));
   return bytes;
 }
@@ -230,12 +248,10 @@ Json::Value Record::asJSON() const
   Json::Value obj;
 
   // add keys
-  auto rsa_ber = getServicePublicKeyBER();
   obj["edKey"] = Botan::base64_encode(edKey_->data(), Const::EdDSA_KEY_LEN);
   obj["edSig"] = Botan::base64_encode(edSig_->data(), Const::EdDSA_SIG_LEN);
-  obj["rsaKey"] = Botan::base64_encode(
-      reinterpret_cast<const unsigned char*>(rsa_ber.data()), rsa_ber.size());
-  obj["rsaSig"] = Botan::base64_encode(serviceSig_.data(), Const::RSA_SIG_LEN);
+  obj["rsaKey"] = Botan::base64_encode(getServicePublicKeyBER());
+  obj["rsaSig"] = Botan::base64_encode(serviceSig_->data(), Const::RSA_SIG_LEN);
 
   // add various
   obj["type"] = type_;
@@ -270,6 +286,16 @@ std::ostream& operator<<(std::ostream& os, const Record& r)
        << std::endl
        << std::endl;
 
+  os << "    Onion service key: ";
+  auto pem = Botan::X509::PEM_encode(*r.serviceKey_);
+  pem.pop_back();
+  Utils::stringReplace(pem, "\n", "\n\t");
+  os << "      RSA Public Key: \n\t" << pem;
+
+  os << "    Onion service signature: ";
+  os << Botan::base64_encode(r.serviceSig_->data(), r.serviceSig_->size() / 4)
+     << " ..." << std::endl;
+
   os << "  Owner: " << std::endl;
   os << "    Key: "
      << Botan::base64_encode(r.edKey_->data(), Const::EdDSA_KEY_LEN)
@@ -280,26 +306,12 @@ std::ostream& operator<<(std::ostream& os, const Record& r)
   if (r.contact_.empty())
     os << "    Contact: PGP 0x" << r.contact_ << std::endl << std::endl;
 
-
   os << "  Validation:" << std::endl;
   os << "    Proof of Work: " << r.computePOW(r.asBytes())
      << (r.verifyPOW() ? " (valid)" : " (invalid)") << std::endl;
   os << "    Nonce: " << r.nonce_ << std::endl;
   os << "    Quorum tag: " << r.rng_;
-  /*
-     os << "   Signature: ";
-     if (valid)
-       os << Botan::base64_encode(r.serviceSig_.data(), r.serviceSig_.size() /
-     4)
-          << " ..." << std::endl;
-     else
-       os << "<regeneration required>" << std::endl;
 
-     auto pem = Botan::X509::PEM_encode(*r.publicKey_);
-     pem.pop_back();  // delete trailing /n
-     Utils::stringReplace(pem, "\n", "\n\t");
-     os << "      RSA Public Key: \n\t" << pem;
-  */
   return os;
 }
 
@@ -311,10 +323,9 @@ std::ostream& operator<<(std::ostream& os, const Record& r)
 
 bool Record::verifyEdDSA() const
 {  // edDSA signature - edDSA key, name, destinations, data, nonce
-  std::string bStr = asBytes(true);
-  const uint8_t* bytes = reinterpret_cast<const uint8_t*>(bStr.data());
-
-  switch (ed25519_sign_open(bytes, bStr.size(), edKey_->data(), edSig_->data()))
+  auto bin = asBytes(true);
+  switch (
+      ed25519_sign_open(bin.data(), bin.size(), edKey_->data(), edSig_->data()))
   {
     case 0:
       Log::get().debug("Record has good EdDSA signature");
@@ -356,14 +367,10 @@ bool Record::verifyServiceKey() const
 
 bool Record::verifyServiceSig() const
 {
-  std::string edKeyStr(reinterpret_cast<const char*>(edKey_->data()),
-                       Const::EdDSA_KEY_LEN);
-  std::string bytesStr = edKeyStr + name_ + getServicePublicKeyBER();
-
   // check signature
-  auto bytes = reinterpret_cast<const unsigned char*>(bytesStr.data());
+  auto bytes = getServiceSigningScope();
   Botan::PK_Verifier verifier(*serviceKey_, "EMSA-PSS(SHA-512)");
-  if (!verifier.verify_message(bytes, bytesStr.size(), serviceSig_.data(),
+  if (!verifier.verify_message(bytes, bytes.size(), serviceSig_->data(),
                                Const::RSA_SIG_LEN))
   {
     Log::get().warn("Record's signature is not valid.");
@@ -456,7 +463,8 @@ bool Record::verifyRNG() const
 
 bool Record::verifyPOW() const
 {
-  return computePOW(asBytes(true)) > Const::POW_WORD_0;
+  return true;  // todo
+  // return computePOW(asBytes(true)) <= Const::POW_WORD_0;
 }
 
 
@@ -465,14 +473,40 @@ bool Record::verifyPOW() const
 
 
 
-std::string Record::getServicePublicKeyBER() const
+Botan::MemoryVector<uint8_t> Record::getServicePublicKeyBER() const
 {
   // https://en.wikipedia.org/wiki/X.690#BER_encoding
-  std::string berBin;
   auto ber = Botan::X509::BER_encode(*getServicePublicKey());
-  std::copy(ber.begin(), ber.end(), berBin.begin());
   Log::get().notice("BER size: " + std::to_string(ber.size()));
-  return berBin;
+  return ber;
+}
+
+
+
+Botan::MemoryVector<uint8_t> Record::getServiceSigningScope() const
+{
+  Botan::MemoryVector<uint8_t> bytes(1024);
+  bytes.copy(bytes.size(), edKey_->data(), Const::EdDSA_KEY_LEN);
+  bytes.copy(bytes.size(), reinterpret_cast<const uint8_t*>(name_.data()),
+             name_.size());
+
+  auto ber = getServicePublicKeyBER();
+  bytes.copy(bytes.size(), ber, ber.size());
+  return bytes;
+}
+
+
+
+std::shared_ptr<Botan::RSA_PublicKey> Record::getServicePublicKey() const
+{
+  return serviceKey_;
+}
+
+
+
+RSA_SIGNATURE Record::getServiceSignature() const
+{
+  return serviceSig_;
 }
 
 
@@ -487,13 +521,6 @@ EdDSA_KEY Record::getMasterPublicKey() const
 EdDSA_SIG Record::getMasterSignature() const
 {
   return edSig_;
-}
-
-
-
-std::shared_ptr<Botan::RSA_PublicKey> Record::getServicePublicKey() const
-{
-  return serviceKey_;
 }
 
 

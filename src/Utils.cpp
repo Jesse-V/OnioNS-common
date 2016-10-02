@@ -76,25 +76,20 @@ std::string Utils::trimString(const std::string& str)
 
 
 
-std::string Utils::decodeBase64(const std::string& b64, size_t max)
+std::vector<uint8_t> Utils::decodeBase64(const std::string& b64, size_t max)
 {
-  const auto eSize = decode64Size(b64.length());
-  uint8_t* buffer = new uint8_t[eSize];
-  size_t len = Botan::base64_decode(buffer, b64, false);
+  std::vector<uint8_t> decoded;
+  decoded.reserve(decode64Size(b64.length()));
+  size_t len = Botan::base64_decode(decoded.data(), b64, false);
 
-  if (len <= max)
-  {
-    std::string str(reinterpret_cast<const char*>(buffer));
-    delete[] buffer;
-    return str;
-  }
-  else
+  if (len > max)
   {
     Log::get().warn("Base64 decoded to " + std::to_string(len) +
                     " bytes, expected " + std::to_string(max));
-    delete[] buffer;
-    return "";
+    decoded.clear();
   }
+
+  return decoded;
 }
 
 

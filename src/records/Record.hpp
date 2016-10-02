@@ -18,6 +18,12 @@ class Record
 {
  public:
   Record(const Json::Value&);
+  Record(const std::string&,
+         const std::string&,
+         const std::string&,
+         const StringMap&,
+         uint32_t,
+         uint32_t);
   Record(const EdDSA_KEY&,
          const EdDSA_SIG&,
          const std::shared_ptr<Botan::RSA_PublicKey>&,
@@ -31,11 +37,11 @@ class Record
 
   // action methods
   std::string resolve(const std::string&) const;
-  SHA256_HASH hash() const;
-  uint32_t computePOW(const std::string&) const;
+  Botan::SecureVector<uint8_t> hash() const;
+  uint32_t computePOW(const std::vector<uint8_t>&) const;
   bool computeValidity() const;
   std::string computeOnion() const;
-  std::string asBytes(bool forSigning = false) const;
+  std::vector<uint8_t> asBytes(bool forSigning = false) const;
   Json::Value asJSON() const;
   friend std::ostream& operator<<(std::ostream&, const Record&);
 
@@ -55,8 +61,9 @@ class Record
   EdDSA_KEY getMasterPublicKey() const;
   EdDSA_SIG getMasterSignature() const;
   std::shared_ptr<Botan::RSA_PublicKey> getServicePublicKey() const;
-  std::string getServicePublicKeyBER() const;
+  Botan::MemoryVector<uint8_t> getServicePublicKeyBER() const;
   RSA_SIGNATURE getServiceSignature() const;
+  Botan::MemoryVector<uint8_t> getServiceSigningScope() const;
   std::string getType() const;
   std::string getName() const;
   std::string getContact() const;

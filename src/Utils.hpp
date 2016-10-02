@@ -18,7 +18,7 @@ class Utils
   static bool strBeginsWith(const std::string&, const std::string&);
   static std::string trimString(const std::string&);
 
-  static std::string decodeBase64(const std::string&, size_t);
+  static std::vector<uint8_t> decodeBase64(const std::string&, size_t);
   static std::shared_ptr<Botan::RSA_PrivateKey> loadKey(const std::string&);
   static std::shared_ptr<Botan::RSA_PrivateKey> loadOpenSSLRSA(
       const std::string&);
