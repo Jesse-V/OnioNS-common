@@ -75,14 +75,14 @@ include_directories(libs libs/libjson-rpc-cpp/src/ libs/libjson-rpc-cpp/build/ge
 add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\))
 
 # define linking
-target_link_libraries(onions-common pthread botan-1.10 curl)
+SET(JSONRPC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/libs/libjson-rpc-cpp/build/lib")
+target_link_libraries(onions-common ${JSONRPC_LIB}/libjsonrpccpp-client.so pthread botan-1.10 curl)
 
 # define library path for Linux's load linker
 # https://fedoraproject.org/wiki/Packaging:Guidelines#Alternatives_to_Rpath
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/onions-common.conf ${CMAKE_INSTALL_PREFIX}/onions-common)
 
 # install libraries
-SET(JSONRPC_LIB "libs/libjson-rpc-cpp/build/lib")
 install(TARGETS onions-common     LIBRARY  DESTINATION lib/onions-common/)
 install(FILES
   ${JSONRPC_LIB}/libjsonrpccpp-common.so
