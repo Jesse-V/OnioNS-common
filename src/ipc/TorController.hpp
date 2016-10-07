@@ -19,6 +19,7 @@ class TorController
   std::string getCookiePath();
   std::shared_ptr<ClientSocket> getClientSocket() const;
   std::string getPassword();
+  bool command(const std::string&);
 
  private:
   std::string getCookieHash(const std::string&);

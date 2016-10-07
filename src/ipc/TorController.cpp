@@ -20,25 +20,18 @@ bool TorController::authenticateToTor(bool usePassword)
   std::string auth =
       usePassword ? getPassword() : getCookieHash(getCookiePath());
 
+  bool success;
   if (usePassword)
-    *socket_ << "AUTHENTICATE \"" + auth + "\"\r\n";
+    success = command("AUTHENTICATE \"" + auth + "\"");
   else
-    *socket_ << "AUTHENTICATE " + auth + "\r\n";
+    success = command("AUTHENTICATE " + auth);
 
-  std::string response;
-  *socket_ >> response;
-
-  if (response == "250 OK\r\n")
-  {
+  if (success)
     Log::get().notice("Successfully authenticated to Tor.");
-    return true;
-  }
   else
-  {
-    Log::get().notice("Tor replied: " + response);
-    Log::get().warn("Unexpected answer from Tor!");
-    return false;
-  }
+    Log::get().warn("Failed to authenticate to Tor.");
+
+  return success;
 }
 
 
@@ -51,8 +44,8 @@ void TorController::waitForBootstrap()
   while (response.find(readyState) == std::string::npos)
   {
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
-    *socket_ << "GETINFO status/bootstrap-phase\r\n";
-    *socket_ >> response;
+    socket_->writeLine("GETINFO status/bootstrap-phase");
+    response = socket_->readLine();
   }
 }
 
@@ -61,43 +54,28 @@ void TorController::waitForBootstrap()
 bool TorController::setSetting(const std::string& variable,
                                const std::string& value)
 {
-  std::string response;
-  *socket_ << "SETCONF " << variable << "=" << value << "\r\n";
-  *socket_ >> response;
-
-  if (response != "250 OK\r\n")
+  if (command("SETCONF " + variable + "=" + value))
+    return true;
+  else
   {
-    Log::get().warn("Issue applying Tor configuration setting! " + response);
+    Log::get().warn("Issue applying Tor configuration setting!");
     return false;
   }
-
-  return true;
 }
 
 
 
 bool TorController::reloadSettings()
 {
-  std::string response;
-  *socket_ << "SIGNAL RELOAD\r\n";
-  *socket_ >> response;
-
-  if (response != "250 OK\r\n")
-  {
-    Log::get().warn("Unexpected response to RELOAD! " + response);
-    return false;
-  }
-
-  return true;
+  return command("SIGNAL RELOAD");
 }
 
 
 
 std::string TorController::getSetting(const std::string& variable)
 {
-  std::string response;
-  *socket_ << "GETCONF " << variable << "\r\n";
-  *socket_ >> response;
+  socket_->writeLine("GETCONF " + variable);
+  std::string response = socket_->readLine();
 
   auto words = Utils::split(response.c_str());
   if (words[0] != "250")
@@ -115,19 +93,26 @@ std::string TorController::getCookiePath()
 {
   try
   {
-    *socket_ << "protocolinfo\r\n";
+    socket_->writeLine("protocolinfo");
 
-    std::string response;
-    *socket_ >> response;
+    std::string protocolInfo = socket_->readLine();
+    if (protocolInfo != "250-PROTOCOLINFO 1")
+      Log::get().error("Expected ProtocolInfo, read \"" + protocolInfo + "\"");
 
+    std::string cookieStr = socket_->readLine();
     std::string needle = "COOKIEFILE=";
-    std::size_t pos = response.find(needle);
+    std::size_t pos = cookieStr.find(needle);
     if (pos == std::string::npos)
-      Log::get().error("Unexpected response from Tor!");
+      Log::get().error("Unexpected response from Tor! \"" + cookieStr + "\"");
+
+    socket_->readLine();  // pop version
+    if (socket_->readLine() != "250 OK")
+      Log::get().error("Expected 250 OK!");
+    ;  // read "250 OK"
 
     std::size_t pathBegin = pos + needle.size() + 1;
-    std::size_t pathEnd = response.find("\"", pathBegin);
-    return response.substr(pathBegin, pathEnd - pathBegin);
+    std::size_t pathEnd = cookieStr.find("\"", pathBegin);
+    return cookieStr.substr(pathBegin, pathEnd - pathBegin);
   }
   catch (std::runtime_error& e)
   {
@@ -171,6 +156,20 @@ std::string TorController::getPassword()
   std::string pw;
   pwFile >> pw;
   return pw;
+}
+
+
+
+bool TorController::command(const std::string& command)
+{
+  socket_->writeLine(command);
+  if (socket_->readLine() != "250 OK")
+  {
+    Log::get().warn("Command failed: " + command);
+    return false;
+  }
+
+  return true;
 }
 
 
