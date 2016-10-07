@@ -24,11 +24,12 @@ ClientSocket::~ClientSocket()
 
 
 // adapted from jsonrpccpp/client/connectors/linuxtcpsocketclient.cpp
-const ClientSocket& ClientSocket::operator<<(const std::string& str) const
+// const ClientSocket& ClientSocket::operator<<(const std::string& str) const
+void ClientSocket::writeLine(const std::string& str)
 {  // send
 
   bool fullyWritten = false;
-  std::string toSend = str;
+  std::string toSend = str + "\r\n";
 
   do
   {
@@ -71,99 +72,21 @@ const ClientSocket& ClientSocket::operator<<(const std::string& str) const
     else
       fullyWritten = true;
   } while (!fullyWritten);
-
-  return *this;
 }
 
 
 
-//#include <iostream>
 std::string ClientSocket::readLine()
 {  // receive
 
   if (lines_.empty() || lines_.size() == 1 && partialLastLine_)
-  {
-    // std::cout << "not complete" << std::endl;
     pushLines(waitForString());
-  }
   else
-  {
-    // std::cout << "!empty" << std::endl;
     pushLines(readAvailable());  // quickly read from socket
-    // if (partialLastLine_)
-    //  pushLines(waitForString());
-  }
-
 
   std::string last = lines_.front();
-  // std::cout << "LAST &" << last << "&\n";
   lines_.pop();
   return last;
-
-  /*
-    pop off oldest line, readSocket(), and return line
-    if buffer empty, read 1 char blocking, then read more
-
-
-  char buffer[BUFFER_SIZE];
-
-  int nbytes = recv(socketFD_, buffer, BUFFER_SIZE, MSG_DONTWAIT);
-  if (nbytes == -1)
-  {
-    int err = errno;
-    if (err == EAGAIN)
-      std::cout << "EAGAIN" << std::endl;
-    else if (err == EWOULDBLOCK)
-      std::cout << "EWOULDBLOCK" << std::endl;
-    else
-      std::cout << strerror(err) << std::endl;
-  }
-  else
-    std::cout << nbytes << std::endl;
-
-
-
-  /*
-    while (true)
-    {
-      int nbytes = recv(socketFD_, buffer, BUFFER_SIZE, 0);
-      if (nbytes == -1)
-      {
-        std::string message = "recv() failed";
-        switch (errno)
-        {
-          case EWOULDBLOCK:
-          case EBADF:
-          case ECONNRESET:
-          case EFAULT:
-          case EINTR:
-          case EINVAL:
-          case ENOMEM:
-          case ENOTCONN:
-          case ENOTSOCK:
-            message = strerror(err);
-            break;
-        }
-
-        throw std::runtime_error(message);
-      }
-      else
-      {
-        std::string tmp(buffer, nbytes);
-        std::size_t eol = tmp.find(DELIMITER_CHAR);
-
-        if (eol == std::string::npos)
-          result.append(tmp);
-        else
-        {
-          result.append(tmp, 0, eol - 1);
-          break;
-        }
-      }
-    }
-  */
-
-  // return *this;
 }
 
 
@@ -179,9 +102,6 @@ void ClientSocket::pushLines(const std::string& str)
   // append the rest of the line
   if (partialLastLine_)
   {
-    // std::cout << "Appending remainder: &" << str.substr(start, end - start -
-    // 1)
-    //          << "&\n";
     lines_.back().append(str.substr(start, end - start - 1));
     start = end + 1;
     end = str.find(DELIMITER_CHAR, start);
@@ -190,8 +110,6 @@ void ClientSocket::pushLines(const std::string& str)
   // push back whole line
   while (end != std::string::npos)
   {
-    // std::cout << "Pushing whole: &" << str.substr(start, end - start - 1)
-    //          << "&\n";
     lines_.push(str.substr(start, end - start - 1));
     start = end + 1;
     end = str.find(DELIMITER_CHAR, start);
@@ -200,9 +118,6 @@ void ClientSocket::pushLines(const std::string& str)
   // push any partial line
   if (start != 0 && start < str.size())
   {
-    // std::cout << "Pushing partial due to " << start << " " << str.size()
-    //          << "&\n";
-    // std::cout << "Pushing partial: &" << str.substr(start) << "&\n";
     partialLastLine_ = true;
     lines_.push(str.substr(start));
   }

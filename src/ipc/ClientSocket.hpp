@@ -12,7 +12,7 @@ class ClientSocket : public jsonrpc::LinuxTcpSocketClient
   ClientSocket(const std::string&, int);
   ~ClientSocket();
 
-  const ClientSocket& operator<<(const std::string&) const;
+  void writeLine(const std::string&);
   std::string readLine();
 
  private:
