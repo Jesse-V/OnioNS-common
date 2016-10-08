@@ -1,23 +1,30 @@
 
 #include "ClientSocket.hpp"
+#include "../Log.hpp"
 #include <string.h>     // strerror
 #include <unistd.h>     // close
 #include <arpa/inet.h>  // send, recv
 
 
 ClientSocket::ClientSocket(const std::string& host, int port)
-    : jsonrpc::LinuxTcpSocketClient(host, port),
-      opened_(false),
-      partialLastLine_(false)
+    : jsonrpc::LinuxTcpSocketClient(host, port), partialLastLine_(false)
 {
-  socketFD_ = this->Connect();
   buffer_.fill(0);
+}
+
+
+
+void ClientSocket::open()
+{
+  Log::get().debug("Connecting to Tor's control port...");
+  socketFD_ = this->Connect();
 }
 
 
 
 ClientSocket::~ClientSocket()
 {
+  Log::get().debug("Closing socket to control port.");
   ::close(socketFD_);
 }
 
@@ -27,6 +34,8 @@ ClientSocket::~ClientSocket()
 // const ClientSocket& ClientSocket::operator<<(const std::string& str) const
 void ClientSocket::writeLine(const std::string& str)
 {  // send
+
+  Log::get().debug("Writing \"" + str + "\" to Tor's control port.");
 
   bool fullyWritten = false;
   std::string toSend = str + "\r\n";
@@ -59,19 +68,20 @@ void ClientSocket::writeLine(const std::string& str)
         case EOPNOTSUPP:
         case EPIPE:
           message = strerror(err);
-          break;
       }
 
-      throw std::runtime_error(message);
+      Log::get().error(message);
     }
     else if (static_cast<size_t>(byteWritten) < toSend.size())
     {
-      int len = toSend.size() - byteWritten;
+      ssize_t len = toSend.size() - byteWritten;
       toSend = toSend.substr(byteWritten + sizeof(char), len);
     }
     else
       fullyWritten = true;
   } while (!fullyWritten);
+
+  Log::get().debug("Write complete.");
 }
 
 
@@ -79,13 +89,20 @@ void ClientSocket::writeLine(const std::string& str)
 std::string ClientSocket::readLine()
 {  // receive
 
-  if (lines_.empty() || lines_.size() == 1 && partialLastLine_)
+  if (lines_.empty() || (lines_.size() == 1 && partialLastLine_))
+  {
+    Log::get().debug("Blocking read from Tor's control port...");
     pushLines(waitForString());
+  }
   else
+  {
+    Log::get().debug("Fast read of control port...");
     pushLines(readAvailable());  // quickly read from socket
+  }
 
   std::string last = lines_.front();
   lines_.pop();
+  Log::get().debug("Oldest Tor line: " + last);
   return last;
 }
 
@@ -93,6 +110,7 @@ std::string ClientSocket::readLine()
 
 void ClientSocket::pushLines(const std::string& str)
 {
+  // Log::get().debug("Processing Tor response \"" + str + "\"");
   if (str.empty())
     return;
 
@@ -129,7 +147,7 @@ void ClientSocket::pushLines(const std::string& str)
 
 char ClientSocket::waitForChar()
 {
-  int nbytes = recv(socketFD_, buffer_.data(), 1, 0);
+  ssize_t nbytes = recv(socketFD_, buffer_.data(), 1, 0);
   if (nbytes == -1)
   {
     std::string message = "recv() failed";
@@ -146,12 +164,11 @@ char ClientSocket::waitForChar()
       case ENOTCONN:
       case ENOTSOCK:
         message = strerror(err);
-        break;
     }
-    throw std::runtime_error(message);
+    Log::get().error(message);
   }
   else if (nbytes == 0)
-    throw std::runtime_error("Socket connection closed 1.");
+    Log::get().error("Socket closed during blocking read, did tor die?");
   else
     return buffer_[0];
 }
@@ -168,10 +185,10 @@ std::string ClientSocket::readAvailable()
     if (err == EAGAIN || err == EWOULDBLOCK)
       return "";
     else
-      throw std::runtime_error(strerror(err));
+      Log::get().error(strerror(err));
   }
   else if (nbytes == 0)
-    throw std::runtime_error("Socket connection closed 2.");
+    Log::get().error("Socket closed during fast read, did tor die?");
   else
     return std::string(buffer_.data(), 0, nbytes);
 }

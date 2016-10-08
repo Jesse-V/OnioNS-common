@@ -10,6 +10,7 @@ class ClientSocket : public jsonrpc::LinuxTcpSocketClient
 {
  public:
   ClientSocket(const std::string&, int);
+  void open();
   ~ClientSocket();
 
   void writeLine(const std::string&);
@@ -25,7 +26,7 @@ class ClientSocket : public jsonrpc::LinuxTcpSocketClient
   static const char DELIMITER_CHAR = 0x0A;
 
   int socketFD_;
-  bool opened_, partialLastLine_;
+  bool partialLastLine_;
   std::queue<std::string> lines_;
   std::array<char, BUFFER_SIZE> buffer_;
 };

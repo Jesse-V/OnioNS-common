@@ -15,10 +15,27 @@ TorController::TorController(const std::string& host, short controlPort)
 
 
 
+bool TorController::connect()
+{
+  try
+  {
+    socket_->open();
+    return true;
+  }
+  catch (const jsonrpc::JsonRpcException& ex)
+  {
+    Log::get().debug(ex.what());
+    return false;
+  }
+}
+
+
 bool TorController::authenticateToTor(bool usePassword)
 {
   std::string auth =
       usePassword ? getPassword() : getCookieHash(getCookiePath());
+
+  Log::get().debug("Read Tor authentication.");
 
   bool success;
   if (usePassword)
@@ -29,7 +46,7 @@ bool TorController::authenticateToTor(bool usePassword)
   if (success)
     Log::get().notice("Successfully authenticated to Tor.");
   else
-    Log::get().warn("Failed to authenticate to Tor.");
+    Log::get().error("Failed to authenticate to Tor.");
 
   return success;
 }
@@ -40,13 +57,17 @@ void TorController::waitForBootstrap()
 {
   std::string response;
   const std::string readyState = "BOOTSTRAP PROGRESS=100";
+  Log::get().debug("Waiting for Tor to bootstrap...");
 
   while (response.find(readyState) == std::string::npos)
   {
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
-    socket_->writeLine("GETINFO status/bootstrap-phase");
-    response = socket_->readLine();
+    response = writeRead("GETINFO status/bootstrap-phase");
   }
+
+  Log::get().debug("Bootstrap complete.");
+  if (socket_->readLine() != "250 OK")
+    Log::get().warn("Expected \"250 OK\" after bootstrap status!");
 }
 
 
@@ -58,6 +79,7 @@ bool TorController::setSetting(const std::string& variable,
     return true;
   else
   {
+    Log::get().debug("Failed setting \"" + variable + "\" = \"" + value + "\"");
     Log::get().warn("Issue applying Tor configuration setting!");
     return false;
   }
@@ -74,8 +96,11 @@ bool TorController::reloadSettings()
 
 std::string TorController::getSetting(const std::string& variable)
 {
-  socket_->writeLine("GETCONF " + variable);
-  std::string response = socket_->readLine();
+  std::string response = writeRead("GETCONF " + variable);
+  Log::get().debug("Tor conf for \"" + variable + "\" is \"" + response + "\"");
+
+  if (socket_->readLine() != "250 OK")
+    Log::get().warn("Expected \"250 OK\" after GETCONF!");
 
   auto words = Utils::split(response.c_str());
   if (words[0] != "250")
@@ -93,22 +118,22 @@ std::string TorController::getCookiePath()
 {
   try
   {
-    socket_->writeLine("protocolinfo");
+    Log::get().debug("Getting path to Tor's auth cookie...");
 
-    std::string protocolInfo = socket_->readLine();
-    if (protocolInfo != "250-PROTOCOLINFO 1")
-      Log::get().error("Expected ProtocolInfo, read \"" + protocolInfo + "\"");
+    if (writeRead("protocolinfo") != "250-PROTOCOLINFO 1")
+      Log::get().error("Unexpected ProtocolInfo header!");
 
     std::string cookieStr = socket_->readLine();
     std::string needle = "COOKIEFILE=";
-    std::size_t pos = cookieStr.find(needle);
+    auto pos = cookieStr.find(needle);
     if (pos == std::string::npos)
       Log::get().error("Unexpected response from Tor! \"" + cookieStr + "\"");
 
+    Log::get().debug("Cookie file: " + cookieStr);
+
     socket_->readLine();  // pop version
     if (socket_->readLine() != "250 OK")
-      Log::get().error("Expected 250 OK!");
-    ;  // read "250 OK"
+      Log::get().error("Expected 250 OK after protocolInfo!");
 
     std::size_t pathBegin = pos + needle.size() + 1;
     std::size_t pathEnd = cookieStr.find("\"", pathBegin);
@@ -127,7 +152,7 @@ std::string TorController::getCookiePath()
 
 std::string TorController::getCookieHash(const std::string& path)
 {
-  Log::get().notice("Reading cookie file " + path);
+  Log::get().debug("Reading cookie file " + path);
 
   // https://stackoverflow.com/questions/2602013/
   std::ifstream authFile(path);
@@ -146,6 +171,8 @@ std::string TorController::getCookieHash(const std::string& path)
 
 std::string TorController::getPassword()
 {
+  Log::get().debug("Reading Tor auth password...");
+
   std::string path = Utils::getWorkingDirectory() + "control.auth_pw";
   Log::get().notice("Reading controller password from " + path);
 
@@ -155,6 +182,7 @@ std::string TorController::getPassword()
 
   std::string pw;
   pwFile >> pw;
+  Log::get().debug("Read " + pw);
   return pw;
 }
 
@@ -162,14 +190,26 @@ std::string TorController::getPassword()
 
 bool TorController::command(const std::string& command)
 {
-  socket_->writeLine(command);
-  if (socket_->readLine() != "250 OK")
+  Log::get().debug("Command " + command);
+  if (writeRead(command) != "250 OK")
   {
     Log::get().warn("Command failed: " + command);
     return false;
   }
 
+  Log::get().debug("Command complete.");
   return true;
+}
+
+
+
+std::string TorController::writeRead(const std::string& command)
+{
+  socketMutex_.lock();
+  socket_->writeLine(command);
+  std::string response = socket_->readLine();
+  socketMutex_.unlock();
+  return response;
 }
 
 
