@@ -12,6 +12,8 @@
 
 Record::Record(const Json::Value& json)  // reciprocal of asJSON
 {
+  Log::get().debug("Decoding JSON into Record...");
+
   // zero variables by default
   edKey_.fill(0);
   edSig_.fill(0);
@@ -56,6 +58,8 @@ Record::Record(const Json::Value& json)  // reciprocal of asJSON
     std::copy(bytes.begin(), bytes.end(), serviceSig_.begin());
   }
 
+  Log::get().debug("Finished decoding keys and signatures.");
+
   if (json.isMember("type"))
     setType(json["type"].asString());
 
@@ -80,6 +84,8 @@ Record::Record(const Json::Value& json)  // reciprocal of asJSON
 
   if (json.isMember("nonce") && json["nonce"].isUInt())
     setNonce(json["nonce"].asUInt());
+
+  Log::get().debug("JSON decoded. Record has been initialized.");
 }
 
 
@@ -126,6 +132,7 @@ Record::Record(const std::string& type,
   edSig_.fill(0);
   serviceSig_.fill(0);
   serviceKey_ = nullptr;
+  Log::get().debug("Partial Record created.");
 }
 
 
@@ -137,6 +144,7 @@ Record::Record(const std::string& type,
 std::string Record::resolve(const std::string& source) const
 {
   // check TLD?
+  Log::get().debug("Record resolving \"" + source + "\"...");
 
   if (source == name_)
     return computeOnion();
@@ -155,8 +163,11 @@ std::string Record::resolve(const std::string& source) const
 // used to uniquely identify the record
 Botan::SecureVector<uint8_t> Record::hash() const
 {
+  Log::get().debug("Hashing record...");
+
   if (!serviceKey_)
   {
+    Log::get().debug("Record is not complete, returning blank hash.");
     Botan::SecureVector<uint8_t> empty(Const::SHA256_LEN);
     return empty;
   }
@@ -170,6 +181,8 @@ Botan::SecureVector<uint8_t> Record::hash() const
 
 uint32_t Record::computePOW(const std::vector<uint8_t>& bytes) const
 {
+  Log::get().debug("Computing PoW...");
+
   Botan::SHA_256 sha;
   auto hashBytes = sha.process(bytes.data(), bytes.size());
 
@@ -184,6 +197,8 @@ bool Record::computeValidity() const
 {
   if (!serviceKey_)  // test if the Record is incompletely created
     return false;
+
+  Log::get().debug("Checking the validity of the complete record...");
 
   // thanks to the PoPETS reviewer who suggested checking PoW first to avoid DoS
   return verifyPOW() && verifyEdDSA() && verifyServiceKey() &&
@@ -212,6 +227,7 @@ std::string Record::computeOnion() const
   std::copy(hash.begin(), hash.end(), hashStr.begin());
   std::string addr = base32::encode(hashStr);
   std::transform(addr.begin(), addr.end(), addr.begin(), ::tolower);
+  Log::get().debug("Complete onion address is " + addr);
   return std::string(addr, 16) + ".onion";
 }
 
@@ -251,7 +267,7 @@ std::vector<uint8_t> Record::asBytes(bool forSigning) const
   memcpy(numbers.data(), &nonce_, 4);
   bytes.insert(bytes.end(), numbers.begin(), numbers.end());
 
-  Log::get().debug("Byte size: " + std::to_string(bytes.size()));
+  Log::get().debug("Converted to bytes, size " + std::to_string(bytes.size()));
   return bytes;
 }
 
@@ -280,6 +296,8 @@ Json::Value Record::asJSON() const
   for (auto sub : subdomains_)
     obj["subd"][sub.first] = sub.second;
 
+  Log::get().debug("Record converted to JSON object.");
+
   return obj;
 }
 
@@ -287,6 +305,8 @@ Json::Value Record::asJSON() const
 
 std::ostream& operator<<(std::ostream& os, const Record& r)
 {
+  Log::get().debug("Writing record to output stream...");
+
   bool valid = r.computeValidity();
   std::string onion = r.computeOnion();
   if (onion.empty())
@@ -369,7 +389,7 @@ bool Record::verifyEdDSA() const
       return false;
 
     case -1:
-      Log::get().error("EdDSA cryptographic error while checking signature!");
+      Log::get().warn("EdDSA cryptographic error while checking signature!");
       return false;
   }
 
@@ -393,6 +413,7 @@ bool Record::verifyServiceKey() const
     return false;
   }
 
+  Log::get().debug("Record RSA onion service key is good.");
   return true;
 }
 
@@ -410,6 +431,7 @@ bool Record::verifyServiceSig() const
     return false;
   }
 
+  Log::get().debug("Record RSA onion service signature is good.");
   return true;
 }
 
@@ -441,6 +463,7 @@ bool Record::verifyStrings() const
     return false;
   }
 
+  Log::get().debug("Record string values are good.");
   return true;
 }
 
@@ -482,6 +505,7 @@ bool Record::verifySubdomains() const
     }
   }
 
+  Log::get().debug("Record subdomains are good.");
   return true;
 }
 
@@ -489,6 +513,7 @@ bool Record::verifySubdomains() const
 
 bool Record::verifyRNG() const
 {
+  Log::get().debug("Record CSPRNG value is good.");
   return true;  // todo
 }
 
@@ -499,6 +524,7 @@ bool Record::verifyPOW() const
   if (!serviceKey_)
     return false;
 
+  Log::get().debug("Record PoW value is below threshold.");
   return true;  // todo
   // return computePOW(asBytes(true)) <= Const::POW_WORD_0;
 }
@@ -513,7 +539,7 @@ Botan::MemoryVector<uint8_t> Record::getServicePublicKeyBER() const
 {
   // https://en.wikipedia.org/wiki/X.690#BER_encoding
   auto ber = Botan::X509::BER_encode(*getServicePublicKey());
-  Log::get().notice("BER size: " + std::to_string(ber.size()));
+  Log::get().debug("BER key size: " + std::to_string(ber.size()));
   return ber;
 }
 
@@ -528,6 +554,7 @@ Botan::MemoryVector<uint8_t> Record::getServiceSigningScope() const
 
   auto ber = getServicePublicKeyBER();
   bytes.copy(bytes.size(), ber, ber.size());
+  Log::get().debug("Signing scope size: " + std::to_string(bytes.size()));
   return bytes;
 }
 
