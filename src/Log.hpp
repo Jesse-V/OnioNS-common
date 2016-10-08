@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <string>
+#include <mutex>
 
 class Log
 {
@@ -19,6 +20,7 @@ class Log
   void warn(const std::string&);
   void error(const std::string&);
   static void setLogPath(const std::string&);
+  static void setVerbosity(bool);
 
  private:
   Log();
@@ -28,6 +30,8 @@ class Log
   void log(const std::string&, const std::string&);
   std::fstream fout_;
   static std::string logPath_;
+  std::mutex mutex_;
+  static bool verbosity_;
 };
 
 #endif

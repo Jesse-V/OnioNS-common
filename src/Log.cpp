@@ -5,7 +5,7 @@
 #include <iostream>
 
 std::string Log::logPath_;
-
+bool Log::verbosity_ = false;
 
 Log::Log()
 {
@@ -29,7 +29,8 @@ Log::Log()
 
 void Log::debug(const std::string& str)
 {
-  log("debug", str);
+  if (verbosity_)
+    log("debug ", str);
 }
 
 
@@ -51,16 +52,18 @@ void Log::warn(const std::string& str)
 void Log::error(const std::string& str)
 {
   log("error ", str);
-  throw std::runtime_error(str);
+  exit(1);
 }
 
 
 
 void Log::log(const std::string& type, const std::string& str)
 {
+  mutex_.lock();  // stops interlacing output
+
   std::time_t t = std::time(NULL);
   char tStr[100];
-  std::strftime(tStr, sizeof(tStr), "%Y-%m-%d %H:%M:%S", std::localtime(&t));
+  std::strftime(tStr, sizeof(tStr), "%H:%M:%S", std::localtime(&t));
 
   if (fout_.is_open() || !logPath_.empty())
   {
@@ -72,11 +75,23 @@ void Log::log(const std::string& type, const std::string& str)
     std::cout << "[" << type << " | " << tStr << "] " << str << std::endl;
     std::cout.flush();
   }
+
+  mutex_.unlock();
 }
 
 
 
 void Log::setLogPath(const std::string& logPath)
 {
+  get().notice("Log path set to " + logPath_);
   logPath_ = logPath;
+}
+
+
+
+void Log::setVerbosity(bool v)
+{
+  if (v)
+    get().warn("Verbosity is enabled. Use caution when sharing debug output!");
+  verbosity_ = v;
 }
