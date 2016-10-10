@@ -42,14 +42,11 @@ void Utils::stringReplace(std::string& str,
 
 
 // https://stackoverflow.com/questions/874134/
-bool Utils::strEndsWith(const std::string& str, const std::string& ending)
+bool Utils::strEndsWith(const std::string& str, const std::string& end)
 {
-  if (str.length() >= ending.length())
-    return (
-        0 ==
-        str.compare(str.length() - ending.length(), ending.length(), ending));
-  else
+  if (end.size() > str.size())
     return false;
+  return std::equal(end.rbegin(), end.rend(), str.rbegin());
 }
 
 
@@ -94,28 +91,28 @@ std::vector<uint8_t> Utils::decodeBase64(const std::string& b64, size_t max)
 
 
 
-std::shared_ptr<Botan::RSA_PrivateKey> Utils::loadKey(
-    const std::string& filename)
+std::shared_ptr<Botan::RSA_PrivateKey> Utils::decodeRSA(const std::string& pem)
 {
   static Botan::AutoSeeded_RNG rng;
 
   try
   {
     // attempt reading key as standardized PKCS8 format
-    Log::get().notice("Opening HS key... ");
+    Log::get().debug("Attempting to decode PKCS8-formatted RSA key... ");
 
-    auto key = Botan::PKCS8::load_key(filename, rng);
+    // todo: adapt the code from Record's constructor
+    Botan::DataSource_Memory keyMem(pem);
+    auto key = Botan::PKCS8::load_key(keyMem, rng);
     auto rsaKey = dynamic_cast<Botan::RSA_PrivateKey*>(key);
     if (!rsaKey)
       Log::get().error("The loaded key is not a RSA key!");
 
-    Log::get().notice("Read PKCS8-formatted RSA key.");
+    Log::get().debug("Decode complete.");
     return std::make_shared<Botan::RSA_PrivateKey>(*rsaKey);
   }
   catch (const Botan::Decoding_Error&)
   {
-    Log::get().notice("Read OpenSSL-formatted RSA key.");
-    return Utils::loadOpenSSLRSA(filename);
+    return Utils::decodeOpenSSLRSA(pem);
   }
   catch (const Botan::Stream_IO_Error& err)
   {
@@ -130,11 +127,13 @@ std::shared_ptr<Botan::RSA_PrivateKey> Utils::loadKey(
 // http://botan.randombit.net/faq.html#how-do-i-load-this-key-generated-by-openssl-into-botan
 // http://lists.randombit.net/pipermail/botan-devel/2010-June/001157.html
 // http://lists.randombit.net/pipermail/botan-devel/attachments/20100611/1d8d870a/attachment.cpp
-std::shared_ptr<Botan::RSA_PrivateKey> Utils::loadOpenSSLRSA(
-    const std::string& filename)
+std::shared_ptr<Botan::RSA_PrivateKey> Utils::decodeOpenSSLRSA(
+    const std::string& pemStr)
 {
+  Log::get().debug("Decoding OpenSSL-formatted RSA key...");
+
   static Botan::AutoSeeded_RNG rng;
-  Botan::DataSource_Stream in(filename);
+  Botan::DataSource_Memory in(pemStr);
   Botan::DataSource_Memory key_bits(
       Botan::PEM_Code::decode_check_label(in, "RSA PRIVATE KEY"));
 
@@ -153,6 +152,8 @@ std::shared_ptr<Botan::RSA_PrivateKey> Utils::loadOpenSSLRSA(
 
   if (version != 0)
     return NULL;
+
+  Log::get().debug("Succesfully decoded OpenSSL RSA key.");
   return std::make_shared<Botan::RSA_PrivateKey>(rng, p, q, e, d, n);
 }
 

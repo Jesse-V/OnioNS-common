@@ -19,8 +19,8 @@ class Utils
   static std::string trimString(const std::string&);
 
   static std::vector<uint8_t> decodeBase64(const std::string&, size_t);
-  static std::shared_ptr<Botan::RSA_PrivateKey> loadKey(const std::string&);
-  static std::shared_ptr<Botan::RSA_PrivateKey> loadOpenSSLRSA(
+  static std::shared_ptr<Botan::RSA_PrivateKey> decodeRSA(const std::string&);
+  static std::shared_ptr<Botan::RSA_PrivateKey> decodeOpenSSLRSA(
       const std::string&);
 
   static std::string getWorkingDirectory();
