@@ -7,17 +7,37 @@
 
 /* define ED25519_SUFFIX to have it appended to the end of each public function */
 #if !defined(ED25519_SUFFIX)
-#define ED25519_SUFFIX 
+#define ED25519_SUFFIX
 #endif
 
 #define ED25519_FN3(fn,suffix) fn##suffix
 #define ED25519_FN2(fn,suffix) ED25519_FN3(fn,suffix)
 #define ED25519_FN(fn)         ED25519_FN2(fn,ED25519_SUFFIX)
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wcast-align"
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wmissing-variable-declarations"
+#elif __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+
 #include "ed25519-donna.h"
 #include "ed25519.h"
 #include "ed25519-randombytes.h"
 #include "ed25519-hash.h"
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#elif __GNUC__
+#pragma GCC diagnostic push
+#endif
 
 /*
 	Generates a (extsk[0..31]) and aExt (extsk[32..63])
@@ -86,7 +106,7 @@ ED25519_FN(ed25519_sign) (const unsigned char *m, size_t mlen, const ed25519_sec
 	/* S = (r + H(R,A,m)a) */
 	add256_modm(S, S, r);
 
-	/* S = (r + H(R,A,m)a) mod L */	
+	/* S = (r + H(R,A,m)a) mod L */
 	contract256_modm(RS + 32, S);
 }
 
@@ -115,7 +135,27 @@ ED25519_FN(ed25519_sign_open) (const unsigned char *m, size_t mlen, const ed2551
 	return ed25519_verify(RS, checkR, 32) ? 0 : -1;
 }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wcast-align"
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wmissing-variable-declarations"
+#elif __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+
 #include "ed25519-donna-batchverify.h"
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#elif __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 /*
 	Fast Curve25519 basepoint scalar multiplication
@@ -147,4 +187,3 @@ ED25519_FN(curved25519_scalarmult_basepoint) (curved25519_key pk, const curved25
 	curve25519_mul(yplusz, yplusz, zminusy);
 	curve25519_contract(pk, yplusz);
 }
-
