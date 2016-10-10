@@ -178,8 +178,8 @@ char ClientSocket::waitForChar()
 std::string ClientSocket::readAvailable()
 {
   // non-blocking
-  int nbytes = recv(socketFD_, buffer_.data(), buffer_.size(), MSG_DONTWAIT);
-  if (nbytes == -1)
+  ssize_t nb = recv(socketFD_, buffer_.data(), buffer_.size(), MSG_DONTWAIT);
+  if (nb == -1)
   {
     int err = errno;
     if (err == EAGAIN || err == EWOULDBLOCK)
@@ -187,10 +187,10 @@ std::string ClientSocket::readAvailable()
     else
       Log::get().error(strerror(err));
   }
-  else if (nbytes == 0)
+  else if (nb == 0)
     Log::get().error("Socket closed during fast read, did tor die?");
   else
-    return std::string(buffer_.data(), 0, nbytes);
+    return std::string(buffer_.data(), 0, nb);
 }
 
 
