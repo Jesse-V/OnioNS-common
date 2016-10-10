@@ -12,7 +12,7 @@ message(STATUS "Build type is ${CMAKE_BUILD_TYPE}")
 
 # define compiler options for Clang and GCC/G++
 # I'm aware of http://voices.canonical.com/jussi.pakkanen/2013/03/26/a-list-of-common-cmake-antipatterns/
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -fstack-protector -D_FORTIFY_SOURCE=1 -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM -DED25519_FORCE_32BIT")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -fstack-protector -D_FORTIFY_SOURCE=1")
 SET(CLANG_DEBUG "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG} -Wno-c++98-compat-pedantic -pedantic -Weverything -Wno-exit-time-destructors -Wno-weak-vtables -Wno-padded -Wno-deprecated -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-missing-noreturn -Wno-sign-conversion -Wno-shadow")
 SET(GCC_DEBUG "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -pedantic -Wdouble-promotion -Wfloat-equal -Wunsafe-loop-optimizations")
 
@@ -58,7 +58,7 @@ add_library(onions-common SHARED
   ipc/TorController.cpp
   ipc/ClientSocket.cpp
 
-  libs/ed25519-donna/ed25519.c
+  libs/ed25519-donna/ed25519.cpp
 )
 
 # define our chain of dependencies
@@ -72,7 +72,8 @@ set_target_properties(onions-common     PROPERTIES VERSION ${MAJOR_VERSION}.${MI
 include_directories(libs libs/libjson-rpc-cpp/src/ libs/libjson-rpc-cpp/build/gen/jsonrpccpp/common /usr/include/botan-1.10)
 
 # set the INSTALL_PREFIX pre-processor directive, distinguishes /usr/bin/ from /usr/local/bin/
-add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\))
+# set the Ed25519-donna directives here to use Botan
+add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\) -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM)
 
 # define linking
 target_link_libraries(onions-common pthread botan-1.10 curl)

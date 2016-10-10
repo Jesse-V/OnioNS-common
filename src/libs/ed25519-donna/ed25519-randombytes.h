@@ -80,7 +80,7 @@ ED25519_FN(ed25519_randombytes_unsafe) (void *p, size_t len) {
 
 #else
 
-#include <openssl/rand.h>
+#error "Compiling against OpenSSL! Please add the two definitions for Botan."
 
 void
 ED25519_FN(ed25519_randombytes_unsafe) (void *p, size_t len) {
