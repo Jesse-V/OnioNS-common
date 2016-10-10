@@ -18,9 +18,7 @@ class Const
   static const size_t EdDSA_SIG_LEN = 64;
 
   // proof of work
-  // static constexpr std::bitset<16> set = 0xfa2;
-  static const uint32_t POW_WORD_0 = 1 << 8;
-  // static const uint32_t POW_WORD_1 = 0x80;
+  static const uint32_t POW_WORD_0 = 64lu;
 
   // networking
   static const ushort SERVER_PORT = 9053;
