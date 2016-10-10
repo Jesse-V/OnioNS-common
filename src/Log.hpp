@@ -18,7 +18,7 @@ class Log
   void debug(const std::string&);
   void notice(const std::string&);
   void warn(const std::string&);
-  void error(const std::string&);
+  void error(const std::string&) __attribute__((__noreturn__));
   static void setLogPath(const std::string&);
   static void setVerbosity(bool);
 

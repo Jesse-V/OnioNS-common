@@ -66,15 +66,9 @@ void Log::log(const std::string& type, const std::string& str)
   std::strftime(tStr, sizeof(tStr), "%H:%M:%S", std::localtime(&t));
 
   if (fout_.is_open() || !logPath_.empty())
-  {
     fout_ << "[" << type << " | " << tStr << "] " << str << std::endl;
-    fout_.flush();
-  }
   else
-  {
     std::cout << "[" << type << " | " << tStr << "] " << str << std::endl;
-    std::cout.flush();
-  }
 
   mutex_.unlock();
 }
