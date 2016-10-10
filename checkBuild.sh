@@ -10,15 +10,15 @@
 # If your distribution has clang-analyzer-3.8, you may need to install that as well.
 
 # in some distributions the path is /usr/share/clang/scan-build-3.8/c++-analyzer
-export CXX=/usr/share/clang/scan-build-3.8/libexec/c++-analyzer
-export CC=/usr/share/clang/scan-build-3.8/libexec/ccc-analyzer
+export CCC_CXX=clang++-3.8
+export CCC_CC=clang-3.8
 
 # delete any previous build as linking fails if there's a mix of compilers
 rm -rf build src/libs/libjson-rpc-cpp/build
 
 mkdir -p build/
 cd build
-scan-build-3.8 cmake ../src -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_C_COMPILER=$CC
+scan-build-3.8 cmake ../src -DCMAKE_CXX_COMPILER=/usr/share/clang/scan-build-3.8/libexec/c++-analyzer -DCMAKE_C_COMPILER=/usr/share/clang/scan-build-3.8/libexec/ccc-analyzer
 # -DCMAKE_BUILD_TYPE=Debug
 
 # 2>&1 | grep -F -v "src/libs"
