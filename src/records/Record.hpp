@@ -13,6 +13,10 @@
 #include "ed25519-donna/ed25519.h"
 
 typedef std::vector<std::pair<std::string, std::string>> StringMap;
+typedef std::array<uint8_t,
+                   Const::EdDSA_KEY_LEN + Const::EdDSA_SIG_LEN +
+                       sizeof(uint32_t)>
+    PoW_SCOPE;
 
 class Record
 {
@@ -38,10 +42,11 @@ class Record
   // action methods
   std::string resolve(const std::string&) const;
   Botan::SecureVector<uint8_t> hash() const;
-  uint32_t computePOW(const std::vector<uint8_t>&) const;
+  uint32_t computePOW() const;
+  static uint32_t computePOW(const PoW_SCOPE&);
   bool computeValidity() const;
   std::string computeOnion() const;
-  std::vector<uint8_t> asBytes(bool forSigning = false) const;
+  std::vector<uint8_t> asBytes(bool) const;
   Json::Value asJSON() const;
   friend std::ostream& operator<<(std::ostream&, const Record&);
 
@@ -64,6 +69,7 @@ class Record
   Botan::MemoryVector<uint8_t> getServicePublicKeyBER() const;
   RSA_SIGNATURE getServiceSignature() const;
   Botan::MemoryVector<uint8_t> getServiceSigningScope() const;
+  PoW_SCOPE getProofOfWorkScope() const;
   std::string getType() const;
   std::string getName() const;
   std::string getContact() const;
