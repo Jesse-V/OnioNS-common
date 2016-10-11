@@ -18,11 +18,14 @@ class Const
   static const size_t EdDSA_SIG_LEN = 64;
 
   // proof of work
-  static const uint32_t POW_WORD_0 = 64lu;
+  static const uint32_t PoW_THRESHOLD = 64lu;
 
   // networking
+  static const ushort TOR_OR_PORT = 9050;
+  static const ushort TOR_CONTROL_PORT = 9051;
   static const ushort SERVER_PORT = 9053;
-  static const short TB_CONTROL_PORT = 9151;
+  static const ushort TB_OR_PORT = 9151;
+  static const ushort TB_CONTROL_PORT = 9151;
 };
 
 // typedef std::shared_ptr<std::array<uint8_t, Const::SHA256_LEN>> SHA256_HASH;
