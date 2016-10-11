@@ -44,6 +44,8 @@ class Record
   Botan::SecureVector<uint8_t> hash() const;
   uint32_t computePOW() const;
   static uint32_t computePOW(const PoW_SCOPE&);
+  double computeWeight() const;
+  static double computeWeight(const PoW_SCOPE&);
   bool computeValidity() const;
   std::string computeOnion() const;
   std::vector<uint8_t> asBytes(bool) const;

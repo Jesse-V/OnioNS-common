@@ -8,6 +8,7 @@
 #include <botan/sha160.h>
 #include <botan/base64.h>
 #include <sstream>
+#include <cmath>
 
 
 Record::Record(const Json::Value& json)  // reciprocal of asJSON
@@ -186,6 +187,7 @@ uint32_t Record::computePOW() const
 
 
 
+// returns first word, updates the second
 uint32_t Record::computePOW(const PoW_SCOPE& scope)
 {
   static Botan::SHA_256 sha;
@@ -194,6 +196,30 @@ uint32_t Record::computePOW(const PoW_SCOPE& scope)
   auto hashBytes = sha.process(scope.data(), scope.size());
   memcpy(&val, hashBytes, sizeof(uint32_t));
   return val;
+}
+
+
+
+double Record::computeWeight() const
+{
+  return computeWeight(getProofOfWorkScope());
+}
+
+
+
+double Record::computeWeight(const PoW_SCOPE& scope)
+{
+  static Botan::SHA_256 sha;
+  auto hashBytes = sha.process(scope.data(), scope.size());
+
+  uint32_t x, y;
+  memcpy(&x, hashBytes + 1 * sizeof(uint32_t), sizeof(uint32_t));
+  memcpy(&y, hashBytes + 2 * sizeof(uint32_t), sizeof(uint32_t));
+
+  if (x == 0 && y == 0)  // prevents returning of NaN
+    return std::pow(2, 64);
+  else  // average the log of two words, then compute -log2(avg / 32)
+    return -log2((log2(x) + log2(y)) / 64);
 }
 
 
@@ -354,12 +380,9 @@ std::ostream& operator<<(std::ostream& os, const Record& r)
     os << "\n    Contact: <not present>";
 
   os << "\n  Validation:";
-
-  os << "\n    Proof of Work:";
-  if (r.serviceKey_)
-    os << " " << r.computePOW();
+  os << "\n    Proof of Work: " << r.computePOW();
   os << (r.verifyPOW() ? " (valid)" : " (invalid)");
-
+  os << "\n    Weight: " << r.computeWeight();
   os << "\n    Nonce: " << r.nonce_;
   os << "\n    Quorum tag: " << r.rng_;
   os << "\n  ID: " << Botan::base64_encode(r.hash());
@@ -523,7 +546,7 @@ bool Record::verifyPOW() const
   if (!serviceKey_)
     return false;
 
-  if (computePOW() > Const::POW_WORD_0)
+  if (computePOW() > Const::PoW_THRESHOLD)
     return false;
   else
   {
