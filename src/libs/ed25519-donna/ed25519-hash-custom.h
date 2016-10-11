@@ -32,7 +32,7 @@ void ed25519_hash_final(ed25519_hash_context* ctx, uint8_t* hash)
 
 void ed25519_hash(uint8_t* hash, const uint8_t* in, size_t inlen)
 {
-  Botan::SHA_512 sha512;
+  static Botan::SHA_512 sha512;
   sha512.update(in, inlen);
   sha512.final(hash);
 }
