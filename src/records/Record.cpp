@@ -190,7 +190,7 @@ uint32_t Record::computePOW() const
 // returns first word, updates the second
 uint32_t Record::computePOW(const PoW_SCOPE& scope)
 {
-  static Botan::SHA_256 sha;
+  Botan::SHA_256 sha;
 
   uint32_t val;
   auto hashBytes = sha.process(scope.data(), scope.size());
