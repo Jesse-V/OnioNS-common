@@ -18,7 +18,7 @@ class Const
   static const size_t EdDSA_SIG_LEN = 64;
 
   // proof of work
-  static const uint32_t PoW_THRESHOLD = 64lu;
+  static const uint32_t PoW_THRESHOLD = 0lu;
 
   // networking
   static const ushort TOR_OR_PORT = 9050;
