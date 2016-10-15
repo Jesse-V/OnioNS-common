@@ -264,12 +264,17 @@ std::string Record::computeOnion() const
 
 
 
+// RSA onion service sig is first, nonce is last
 std::vector<uint8_t> Record::asBytes(bool includeMasterSig) const
 {
   std::vector<uint8_t> bytes;  //(1024);
 
   if (!serviceKey_)  // test if Record is incompletely created
     return bytes;
+
+  bytes.insert(bytes.end(), serviceSig_.begin(), serviceSig_.end());
+  if (includeMasterSig)
+    bytes.insert(bytes.end(), edSig_.begin(), edSig_.end());
 
   auto ber = getServicePublicKeyBER();
   bytes.insert(bytes.end(), ber.begin(), ber.end());
@@ -280,10 +285,6 @@ std::vector<uint8_t> Record::asBytes(bool includeMasterSig) const
     bytes.insert(bytes.end(), sub.first.begin(), sub.first.end());
     bytes.insert(bytes.end(), sub.second.begin(), sub.second.end());
   }
-
-  bytes.insert(bytes.end(), serviceSig_.begin(), serviceSig_.end());
-  if (includeMasterSig)
-    bytes.insert(bytes.end(), edSig_.begin(), edSig_.end());
 
   bytes.insert(bytes.end(), type_.begin(), type_.end());
   bytes.insert(bytes.end(), name_.begin(), name_.end());
