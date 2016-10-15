@@ -5,3 +5,6 @@
 [submodule "src/libs/cppcodec"]
 	path = src/libs/cppcodec
 	url = https://github.com/tplgy/cppcodec.git
+[submodule "src/libs/ed25519-donna"]
+	path = src/libs/ed25519-donna
+	url = https://github.com/Jesse-V/ed25519-donna.git
