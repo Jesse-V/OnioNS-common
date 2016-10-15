@@ -10,9 +10,14 @@ set(SO_VERSION    0)
 
 message(STATUS "Build type is ${CMAKE_BUILD_TYPE}")
 
-# define compiler options for Clang and GCC/G++
-# I'm aware of http://voices.canonical.com/jussi.pakkanen/2013/03/26/a-list-of-common-cmake-antipatterns/
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -fstack-protector -D_FORTIFY_SOURCE=1 -pipe -mtune=generic")
+# define compiler options for Clang and GCC/G++, I'm aware of http://voices.canonical.com/jussi.pakkanen/2013/03/26/a-list-of-common-cmake-antipatterns/
+set(OPTIMIZE_POW NO CACHE BOOL "Use OpenSSL to support speed-sensitive crypto with CPU-specific optimizations.")
+if (OPTIMIZE_POW)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -fstack-protector -D_FORTIFY_SOURCE=1 -pipe -march=native")
+else()
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11 -fstack-protector -D_FORTIFY_SOURCE=1 -mtune=generic")
+endif()
+
 SET(CLANG_DEBUG "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG} -Wno-c++98-compat-pedantic -pedantic -Weverything -Wno-exit-time-destructors -Wno-weak-vtables -Wno-padded -Wno-deprecated -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-missing-noreturn -Wno-sign-conversion -Wno-shadow")
 SET(GCC_DEBUG "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -pedantic -Wdouble-promotion -Wfloat-equal -Wunsafe-loop-optimizations")
 
@@ -58,8 +63,11 @@ add_library(onions-common SHARED
   ipc/TorController.cpp
   ipc/ClientSocket.cpp
 
-  libs/ed25519-donna/ed25519.cpp
+  libs/ed25519-donna/ed25519.c
 )
+
+# compile ed25519-donna as C++ since randombytes-custom.h and hash-custom.h use Botan/C++
+set_source_files_properties(libs/ed25519-donna/ed25519.c PROPERTIES LANGUAGE CXX COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wno-old-style-cast -Wno-cast-align -Wno-implicit-fallthrough -Wno-sign-conversion -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-pedantic -Wno-sign-compare")
 
 # define our chain of dependencies
 add_dependencies(onions-api onions-json-rpc)
@@ -73,7 +81,13 @@ include_directories(libs libs/libjson-rpc-cpp/src/ libs/libjson-rpc-cpp/build/ge
 
 # set the INSTALL_PREFIX pre-processor directive, distinguishes /usr/bin/ from /usr/local/bin/
 # set the Ed25519-donna directives here to use Botan
-add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\) -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM)
+if (OPTIMIZE_POW)
+  add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\) -DHASH_USING_OPENSSL)
+  message(STATUS "Will use OpenSSL for speed-sensitive cryptographic operations.")
+else()
+  add_definitions(-DINSTALL_PREFIX=std::string\("${CMAKE_INSTALL_PREFIX}"\) -DED25519_CUSTOMHASH -DED25519_CUSTOMRANDOM)
+  message(STATUS "Will use Botan for all cryptographic operations.")
+endif()
 
 # define linking
 target_link_libraries(onions-common pthread botan-1.10 curl)
@@ -117,7 +131,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LocalServerInterface.h      DESTINATIO
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LocalClient.h               DESTINATION ${HEADERS}/api)
 
 # install ed25519-donna headers
-install(DIRECTORY libs/ed25519-donna DESTINATION ${HEADERS})
+install(FILES libs/ed25519-donna/ed25519.h DESTINATION ${HEADERS}/ed25519-donna)
 
 # install headers for json-rpc-cpp dependency
 set(JSONRPC_BASE "libs/libjson-rpc-cpp/src/jsonrpccpp")

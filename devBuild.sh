@@ -25,7 +25,7 @@ export CC=clang-3.8
 # set up build
 mkdir -p build
 cd build
-cmake ../src -DCMAKE_BUILD_TYPE=Debug
+cmake ../src -DCMAKE_BUILD_TYPE=Debug -DOPTIMIZE_POW=NO
 
 echo "Compiling...              ----------------------------------------------"
 if (make -j $(grep -c ^processor /proc/cpuinfo)) then

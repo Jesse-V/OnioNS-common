@@ -10,6 +10,10 @@
 #include <sstream>
 #include <cmath>
 
+#if defined(HASH_USING_OPENSSL)
+#include <openssl/sha.h>
+#endif
+
 
 Record::Record(const Json::Value& json)  // reciprocal of asJSON
 {
@@ -190,10 +194,15 @@ uint32_t Record::computePOW() const
 // returns first word, updates the second
 uint32_t Record::computePOW(const PoW_SCOPE& scope)
 {
+#if defined(HASH_USING_OPENSSL)
+  static uint8_t hashBytes[Const::SHA256_LEN];
+  SHA256(scope.data(), scope.size(), hashBytes);
+#else
   Botan::SHA_256 sha;
+  auto hashBytes = sha.process(scope.data(), scope.size());
+#endif
 
   uint32_t val;
-  auto hashBytes = sha.process(scope.data(), scope.size());
   memcpy(&val, hashBytes, sizeof(uint32_t));
   return val;
 }
@@ -209,8 +218,13 @@ double Record::computeWeight() const
 
 double Record::computeWeight(const PoW_SCOPE& scope)
 {
-  static Botan::SHA_256 sha;
+#if defined(HASH_USING_OPENSSL)
+  uint8_t hashBytes[Const::SHA256_LEN];
+  SHA256(scope.data(), scope.size(), hashBytes);
+#else
+  Botan::SHA_256 sha;
   auto hashBytes = sha.process(scope.data(), scope.size());
+#endif
 
   uint32_t x, y;
   memcpy(&x, hashBytes + 1 * sizeof(uint32_t), sizeof(uint32_t));
